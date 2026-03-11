@@ -21,7 +21,7 @@ extern "C" {
 #define APP_END_ADDR             0x0807FFFFU  /* Application end address (512KB total) */
 
 /* SRAM boundaries */
-// #define SRAM_BASE                0x20000000U
+#define SRAM_BASE                0x20000000U
 #define SRAM_END                 0x20017FFFU  /* 96KB SRAM */
 
 /* Boot timeout in milliseconds */

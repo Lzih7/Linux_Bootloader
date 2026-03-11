@@ -1,87 +1,87 @@
 /**
   ******************************************************************************
   * @file    main.c
-  * @brief   Bootloader main program for STM32F401
-  * @details This bootloader initializes the system and jumps to the application
-  *          located at 0x08010000 if valid. Otherwise, it stays in bootloader mode.
+  * @brief   STM32F401 Bootloader 主程序
+  * @details 该 Bootloader 初始化系统，并在应用程序有效时跳转到位于 0x08010000 的应用程序。
+  *          否则，它将停留在 Bootloader 模式。
   ******************************************************************************
   */
 
 #include "main.h"
 
-/* Private function prototypes */
+/* 私有函数原型 */
 static int32_t validate_application(void);
 static void bootloader_jump_to_app(void);
 static void bootloader_error_loop(void);
 
-/* Private variables */
+/* 私有变量 */
 static volatile uint32_t boot_timeout = 0;
 static volatile uint8_t boot_flag = 0;
 
 /**
-  * @brief  Main program
-  * @retval None
+  * @brief  主程序
+  * @retval 无
   */
 int main(void)
 {
-  /* Initialize system clocks and peripherals */
+  /* 初始化系统时钟和外设 */
   system_init();
   
-  /* Initialize GPIO for LED status indication */
+  /* 初始化用于 LED 状态指示的 GPIO */
   gpio_init();
   
-  /* Check if application is valid */
+  /* 检查应用程序是否有效 */
   if (validate_application() == BOOTLOADER_OK) {
-    /* Application is valid, jump to it after short delay */
+    /* 应用程序有效，短暂延迟后跳转 */
     boot_timeout = BOOT_TIMEOUT_MS;
     
-    /* Wait for timeout (LED fast blink) */
+    /* 等待超时（LED 快速闪烁） */
     while (boot_timeout > 0) {
       led_toggle();
       delay_ms(100);
       boot_timeout -= 100;
     }
     
-    /* Jump to application */
+    /* 跳转到应用程序 */
     bootloader_jump_to_app();
   } else {
-    /* No valid application, stay in bootloader (LED solid on) */
+    /* 没有有效的应用程序，停留在 Bootloader（LED 常亮） */
     bootloader_error_loop();
   }
   
-  /* Should never reach here */
+  /* 不应到达此处 */
   while (1) {
     bootloader_error_loop();
   }
 }
 
 /**
-  * @brief  Validate application at APP_START_ADDR
-  * @retval BOOTLOADER_OK if application is valid, error code otherwise
+  * @brief  验证位于 APP_START_ADDR 的应用程序
+  * @retval 如果应用程序有效则返回 BOOTLOADER_OK，否则返回错误代码
   */
 static int32_t validate_application(void)
 {
   uint32_t app_stack_ptr;
   uint32_t app_reset_handler;
   
-  /* Read stack pointer from application vector table */
+  /* 从应用程序向量表读取栈指针 */
   app_stack_ptr = *(volatile uint32_t *)(APP_START_ADDR);
   
-  /* Read reset handler from application vector table */
+  /* 从应用程序向量表读取复位处理程序 */
   app_reset_handler = *(volatile uint32_t *)(APP_START_ADDR + 4);
   
-  /* Validate stack pointer points to SRAM */
-  if (app_stack_ptr < SRAM_BASE || app_stack_ptr > SRAM_END) {
+  /* 验证栈指针是否指向 SRAM */
+  if (app_stack_ptr < SRAM_BASE || app_stack_ptr > (SRAM_END + 1)) {
     return BOOTLOADER_ERR_INVALID_APP;
   }
   
-  /* Validate reset handler points to application flash region */
+  /* 验证复位处理程序是否指向应用程序 Flash 区域 */
   if (app_reset_handler < APP_START_ADDR || app_reset_handler > APP_END_ADDR) {
     return BOOTLOADER_ERR_INVALID_APP;
   }
   
-  /* Simple checksum check (optional, could be enhanced) */
-  /* For now, just check if the first location is not all 0xFF or 0x00 */
+  /* 简单的校验和检查（可选，可增强） */
+  /* 目前仅检查第一个位置是否不全为 0xFF 或 0x00 */
   if (app_stack_ptr == 0xFFFFFFFF || app_stack_ptr == 0x00000000) {
     return BOOTLOADER_ERR_NO_APP;
   }
@@ -90,8 +90,8 @@ static int32_t validate_application(void)
 }
 
 /**
-  * @brief  Jump to application at APP_START_ADDR
-  * @retval None
+  * @brief  跳转到位于 APP_START_ADDR 的应用程序
+  * @retval 无
   */
 static void bootloader_jump_to_app(void)
 {
@@ -101,128 +101,128 @@ static void bootloader_jump_to_app(void)
   uint32_t app_reset_handler;
   pFunction app_entry;
   
-  /* Disable all interrupts */
+  /* 禁用所有中断 */
   __disable_irq();
   
-  /* Get application stack pointer and reset handler */
+  /* 获取应用程序栈指针和复位处理程序 */
   app_stack_ptr = *(volatile uint32_t *)(APP_START_ADDR);
   app_reset_handler = *(volatile uint32_t *)(APP_START_ADDR + 4);
   
-  /* Set main stack pointer to application's stack */
+  /* 将主栈指针设置为应用程序的栈 */
   __set_MSP(app_stack_ptr);
   
-  /* Relocate vector table to application region */
+  /* 将向量表重定位到应用程序区域 */
   SCB->VTOR = APP_START_ADDR;
   
-  /* Enable interrupts for application */
+  /* 为应用程序启用中断 */
   __enable_irq();
   
-  /* Jump to application */
+  /* 跳转到应用程序 */
   app_entry = (pFunction)(app_reset_handler);
   app_entry();
   
-  /* Should never return */
+  /* 不应返回 */
   while (1) {
-    /* Error if we get here */
+    /* 如果到达此处则出错 */
   }
 }
 
 /**
-  * @brief  Error loop - stays in bootloader mode
-  * @retval None
+  * @brief  错误循环 - 停留在 Bootloader 模式
+  * @retval 无
   */
 static void bootloader_error_loop(void)
 {
-  /* Turn LED solid on to indicate error */
-  GPIOA->BSRR = (1 << 5);  /* Set PA5 (LED on) */
+  /* LED 常亮以指示错误 */
+  GPIOA->BSRR = (1 << 5);  /* 置位 PA5 (LED 点亮) */
   
   while (1) {
-    /* Stay here - no valid application */
+    /* 停留在此处 - 没有有效的应用程序 */
   }
 }
 
 /**
-  * @brief  Initialize system clocks
-  * @retval None
+  * @brief  初始化系统时钟
+  * @retval 无
   */
 void system_init(void)
 {
-  /* Reset the RCC clock configuration to the default reset state */
-  RCC->CR |= RCC_CR_HSION;                /* Enable HSI */
-  while (!(RCC->CR & RCC_CR_HSIRDY));     /* Wait for HSI ready */
+  /* 将 RCC 时钟配置重置为默认复位状态 */
+  RCC->CR |= RCC_CR_HSION;                /* 启用 HSI */
+  while (!(RCC->CR & RCC_CR_HSIRDY));     /* 等待 HSI 就绪 */
   
-  RCC->CFGR = 0x00000000;                 /* Reset CFGR register */
-  RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_CSSON | RCC_CR_PLLON);  /* Disable HSE, CSS, PLL */
-  RCC->CR &= ~RCC_CR_HSEBYP;              /* Disable HSE bypass */
-  RCC->CFGR &= ~RCC_CFGR_HPRE;            /* Reset HPRE */
-  RCC->CFGR &= ~RCC_CFGR_PPRE1;           /* Reset PPRE1 */
-  RCC->CFGR &= ~RCC_CFGR_PPRE2;           /* Reset PPRE2 */
+  RCC->CFGR = 0x00000000;                 /* 重置 CFGR 寄存器 */
+  RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_CSSON | RCC_CR_PLLON);  /* 禁用 HSE, CSS, PLL */
+  RCC->CR &= ~RCC_CR_HSEBYP;              /* 禁用 HSE 旁路 */
+  RCC->CFGR &= ~RCC_CFGR_HPRE;            /* 重置 HPRE */
+  RCC->CFGR &= ~RCC_CFGR_PPRE1;           /* 重置 PPRE1 */
+  RCC->CFGR &= ~RCC_CFGR_PPRE2;           /* 重置 PPRE2 */
   
-  /* Disable all interrupts */
+  /* 禁用所有中断 */
   RCC->CIR = 0x00000000;
   
-  /* SystemInit() is called from startup code */
-  /* Vector table is already set to FLASH_BASE */
+  /* SystemInit() 由启动代码调用 */
+  /* 向量表已设置为 FLASH_BASE */
   
-  /* Update SystemCoreClock variable */
+  /* 更新 SystemCoreClock 变量 */
   SystemCoreClockUpdate();
 }
 
 /**
-  * @brief  Initialize GPIO for LED (PA5 - built-in LED on many STM32 boards)
-  * @retval None
+  * @brief  初始化用于 LED 的 GPIO (PA5 - 许多 STM32 开发板上的内置 LED)
+  * @retval 无
   */
 void gpio_init(void)
 {
-  /* Enable GPIOA clock */
+  /* 启用 GPIOA 时钟 */
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   
-  /* Configure PA5 as output */
-  GPIOA->MODER &= ~(3 << (5 * 2));        /* Clear mode bits for PA5 */
-  GPIOA->MODER |= (1 << (5 * 2));         /* Set PA5 to output mode */
+  /* 配置 PA5 为输出 */
+  GPIOA->MODER &= ~(3 << (5 * 2));        /* 清除 PA5 的模式位 */
+  GPIOA->MODER |= (1 << (5 * 2));         /* 设置 PA5 为输出模式 */
   
-  /* Configure PA5 output type (push-pull) */
-  GPIOA->OTYPER &= ~(1 << 5);             /* Output push-pull */
+  /* 配置 PA5 输出类型（推挽） */
+  GPIOA->OTYPER &= ~(1 << 5);             /* 输出推挽 */
   
-  /* Configure PA5 speed (high speed) */
-  GPIOA->OSPEEDR &= ~(3 << (5 * 2));      /* Clear speed bits */
-  GPIOA->OSPEEDR |= (2 << (5 * 2));       /* High speed */
+  /* 配置 PA5 速度（高速） */
+  GPIOA->OSPEEDR &= ~(3 << (5 * 2));      /* 清除速度位 */
+  GPIOA->OSPEEDR |= (2 << (5 * 2));       /* 高速 */
   
-  /* Configure PA5 no pull-up/pull-down */
-  GPIOA->PUPDR &= ~(3 << (5 * 2));        /* No pull-up/pull-down */
+  /* 配置 PA5 无上拉/下拉 */
+  GPIOA->PUPDR &= ~(3 << (5 * 2));        /* 无上拉/下拉 */
   
-  /* Turn LED off initially */
-  GPIOA->BSRR = (1 << (5 + 16));          /* Reset PA5 */
+  /* 初始关闭 LED */
+  GPIOA->BSRR = (1 << (5 + 16));          /* 复位 PA5 */
 }
 
 /**
-  * @brief  Toggle LED state
-  * @retval None
+  * @brief  翻转 LED 状态
+  * @retval 无
   */
 void led_toggle(void)
 {
-  /* Toggle PA5 */
+  /* 翻转 PA5 */
   if (GPIOA->ODR & (1 << 5)) {
-    GPIOA->BSRR = (1 << (5 + 16));        /* Reset PA5 */
+    GPIOA->BSRR = (1 << (5 + 16));        /* 复位 PA5 */
   } else {
-    GPIOA->BSRR = (1 << 5);               /* Set PA5 */
+    GPIOA->BSRR = (1 << 5);               /* 置位 PA5 */
   }
 }
 
 /**
-  * @brief  Simple delay function using SysTick (not calibrated, just busy wait)
-  * @param  ms: delay time in milliseconds
-  * @retval None
+  * @brief  使用 SysTick 的简单延迟函数（未校准，仅为忙等待）
+  * @param  ms: 延迟时间（毫秒）
+  * @retval 无
   */
 void delay_ms(uint32_t ms)
 {
-  /* Simple busy-wait delay - not accurate but sufficient for bootloader */
-  /* Assuming 16MHz HSI clock (default after reset) */
+  /* 简单的忙等待延迟 - 不精确但对 Bootloader 足够 */
+  /* 假设 16MHz HSI 时钟（复位后默认） */
   volatile uint32_t count;
   volatile uint32_t i;
   
-  /* Adjust this value based on actual clock frequency */
-  /* For 16MHz: approximately 16000 cycles per millisecond */
+  /* 根据实际时钟频率调整此值 */
+  /* 对于 16MHz：每毫秒约 16000 个周期 */
   count = ms * 1600;
   
   for (i = 0; i < count; i++) {

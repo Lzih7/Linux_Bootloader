@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccWVU6UO.s 			page 1
+ARM GAS  /tmp/ccMAK5G7.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
   29:../bootloader/src/main.c ****   
   30:../bootloader/src/main.c ****   /* Initialize GPIO for LED status indication */
   31:../bootloader/src/main.c ****   gpio_init();
-ARM GAS  /tmp/ccWVU6UO.s 			page 2
+ARM GAS  /tmp/ccMAK5G7.s 			page 2
 
 
   32:../bootloader/src/main.c ****   
@@ -118,17 +118,17 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
   42 0004 5B68     		ldr	r3, [r3, #4]
   43              	.LVL1:
   72:../bootloader/src/main.c ****   
-ARM GAS  /tmp/ccWVU6UO.s 			page 3
+ARM GAS  /tmp/ccMAK5G7.s 			page 3
 
 
   73:../bootloader/src/main.c ****   /* Validate stack pointer points to SRAM */
-  74:../bootloader/src/main.c ****   if (app_stack_ptr < SRAM_BASE || app_stack_ptr > SRAM_END) {
+  74:../bootloader/src/main.c ****   if (app_stack_ptr < SRAM_BASE || app_stack_ptr > (SRAM_END + 1)) {
   44              		.loc 1 74 3 is_stmt 1 view .LVU7
   45              		.loc 1 74 33 is_stmt 0 view .LVU8
   46 0006 02F16041 		add	r1, r2, #-536870912
   47              		.loc 1 74 6 view .LVU9
   48 000a B1F5C03F 		cmp	r1, #98304
-  49 000e 0CD2     		bcs	.L3
+  49 000e 0CD8     		bhi	.L3
   75:../bootloader/src/main.c ****     return BOOTLOADER_ERR_INVALID_APP;
   76:../bootloader/src/main.c ****   }
   77:../bootloader/src/main.c ****   
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
   79 0034 7047     		bx	lr
   80              	.LVL7:
   81              	.L5:
-ARM GAS  /tmp/ccWVU6UO.s 			page 4
+ARM GAS  /tmp/ccMAK5G7.s 			page 4
 
 
   86:../bootloader/src/main.c ****     return BOOTLOADER_ERR_NO_APP;
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
    4:../common/cmsis/core/cmsis_gcc.h ****  * @version  V4.30
    5:../common/cmsis/core/cmsis_gcc.h ****  * @date     20. October 2015
    6:../common/cmsis/core/cmsis_gcc.h ****  ******************************************************************************/
-ARM GAS  /tmp/ccWVU6UO.s 			page 5
+ARM GAS  /tmp/ccMAK5G7.s 			page 5
 
 
    7:../common/cmsis/core/cmsis_gcc.h **** /* Copyright (c) 2009 - 2015 ARM LIMITED
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
   61:../common/cmsis/core/cmsis_gcc.h **** }
   62:../common/cmsis/core/cmsis_gcc.h **** 
   63:../common/cmsis/core/cmsis_gcc.h **** 
-ARM GAS  /tmp/ccWVU6UO.s 			page 6
+ARM GAS  /tmp/ccMAK5G7.s 			page 6
 
 
   64:../common/cmsis/core/cmsis_gcc.h **** /**
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
   88:../common/cmsis/core/cmsis_gcc.h **** 
   89:../common/cmsis/core/cmsis_gcc.h **** /**
   90:../common/cmsis/core/cmsis_gcc.h ****   \brief   Set Control Register
-ARM GAS  /tmp/ccWVU6UO.s 			page 7
+ARM GAS  /tmp/ccMAK5G7.s 			page 7
 
 
   91:../common/cmsis/core/cmsis_gcc.h ****   \details Writes the given value to the Control Register.
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  145:../common/cmsis/core/cmsis_gcc.h ****   \details Returns the current value of the Process Stack Pointer (PSP).
  146:../common/cmsis/core/cmsis_gcc.h ****   \return               PSP Register value
  147:../common/cmsis/core/cmsis_gcc.h ****  */
-ARM GAS  /tmp/ccWVU6UO.s 			page 8
+ARM GAS  /tmp/ccMAK5G7.s 			page 8
 
 
  148:../common/cmsis/core/cmsis_gcc.h **** __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_PSP(void)
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  152              		.syntax unified
  153              	.LBE13:
  154              	.LBE12:
-ARM GAS  /tmp/ccWVU6UO.s 			page 9
+ARM GAS  /tmp/ccMAK5G7.s 			page 9
 
 
  113:../bootloader/src/main.c ****   
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  191              	.LFE125:
  193              		.section	.text.bootloader_error_loop,"ax",%progbits
  194              		.align	1
-ARM GAS  /tmp/ccWVU6UO.s 			page 10
+ARM GAS  /tmp/ccMAK5G7.s 			page 10
 
 
  195              		.syntax unified
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  146:../bootloader/src/main.c ****   * @retval None
  147:../bootloader/src/main.c ****   */
  148:../bootloader/src/main.c **** void system_init(void)
-ARM GAS  /tmp/ccWVU6UO.s 			page 11
+ARM GAS  /tmp/ccMAK5G7.s 			page 11
 
 
  149:../bootloader/src/main.c **** {
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  278 0030 9A68     		ldr	r2, [r3, #8]
  279              		.loc 1 157 13 view .LVU73
  280 0032 22F0F002 		bic	r2, r2, #240
-ARM GAS  /tmp/ccWVU6UO.s 			page 12
+ARM GAS  /tmp/ccMAK5G7.s 			page 12
 
 
  281 0036 9A60     		str	r2, [r3, #8]
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  318              		.loc 1 176 1 is_stmt 1 view -0
  319              		.cfi_startproc
  320              		@ args = 0, pretend = 0, frame = 0
-ARM GAS  /tmp/ccWVU6UO.s 			page 13
+ARM GAS  /tmp/ccMAK5G7.s 			page 13
 
 
  321              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  191:../bootloader/src/main.c ****   /* Configure PA5 no pull-up/pull-down */
  192:../bootloader/src/main.c ****   GPIOA->PUPDR &= ~(3 << (5 * 2));        /* No pull-up/pull-down */
  361              		.loc 1 192 3 is_stmt 1 view .LVU103
-ARM GAS  /tmp/ccWVU6UO.s 			page 14
+ARM GAS  /tmp/ccMAK5G7.s 			page 14
 
 
  362              		.loc 1 192 8 is_stmt 0 view .LVU104
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  404 000a 044B     		ldr	r3, .L28
  405 000c 4FF40012 		mov	r2, #2097152
  406 0010 9A61     		str	r2, [r3, #24]
-ARM GAS  /tmp/ccWVU6UO.s 			page 15
+ARM GAS  /tmp/ccMAK5G7.s 			page 15
 
 
  407 0012 7047     		bx	lr
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  226:../bootloader/src/main.c ****   count = ms * 1600;
  444              		.loc 1 226 3 view .LVU122
  445              		.loc 1 226 14 is_stmt 0 view .LVU123
-ARM GAS  /tmp/ccWVU6UO.s 			page 16
+ARM GAS  /tmp/ccMAK5G7.s 			page 16
 
 
  446 0002 4FF4C863 		mov	r3, #1600
@@ -958,7 +958,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  227:../common/cmsis/core/cmsis_gcc.h **** {
  228:../common/cmsis/core/cmsis_gcc.h ****   __ASM volatile ("cpsie f" : : : "memory");
  229:../common/cmsis/core/cmsis_gcc.h **** }
-ARM GAS  /tmp/ccWVU6UO.s 			page 17
+ARM GAS  /tmp/ccMAK5G7.s 			page 17
 
 
  230:../common/cmsis/core/cmsis_gcc.h **** 
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  284:../common/cmsis/core/cmsis_gcc.h ****  */
  285:../common/cmsis/core/cmsis_gcc.h **** __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_FAULTMASK(void)
  286:../common/cmsis/core/cmsis_gcc.h **** {
-ARM GAS  /tmp/ccWVU6UO.s 			page 18
+ARM GAS  /tmp/ccMAK5G7.s 			page 18
 
 
  287:../common/cmsis/core/cmsis_gcc.h ****   uint32_t result;
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  341:../common/cmsis/core/cmsis_gcc.h ****   __ASM volatile ("");
  342:../common/cmsis/core/cmsis_gcc.h **** #endif
  343:../common/cmsis/core/cmsis_gcc.h **** }
-ARM GAS  /tmp/ccWVU6UO.s 			page 19
+ARM GAS  /tmp/ccMAK5G7.s 			page 19
 
 
  344:../common/cmsis/core/cmsis_gcc.h **** 
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  481 0020 F7D3     		bcc	.L32
  230:../bootloader/src/main.c ****   }
  231:../bootloader/src/main.c **** }
-ARM GAS  /tmp/ccWVU6UO.s 			page 20
+ARM GAS  /tmp/ccMAK5G7.s 			page 20
 
 
  482              		.loc 1 231 1 is_stmt 0 view .LVU133
@@ -1198,7 +1198,7 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  528              		.loc 1 39 11 is_stmt 0 view .LVU143
  529 0018 08E0     		b	.L36
  530              	.L37:
-ARM GAS  /tmp/ccWVU6UO.s 			page 21
+ARM GAS  /tmp/ccMAK5G7.s 			page 21
 
 
   40:../bootloader/src/main.c ****       delay_ms(100);
@@ -1254,38 +1254,38 @@ ARM GAS  /tmp/ccWVU6UO.s 			page 1
  579              		.file 5 "../common/cmsis/device/stm32f401xe.h"
  580              		.file 6 "../bootloader/inc/main.h"
  581              		.file 7 "../common/cmsis/device/system_stm32f4xx.h"
-ARM GAS  /tmp/ccWVU6UO.s 			page 22
+ARM GAS  /tmp/ccMAK5G7.s 			page 22
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-     /tmp/ccWVU6UO.s:21     .text.validate_application:00000000 $t
-     /tmp/ccWVU6UO.s:26     .text.validate_application:00000000 validate_application
-     /tmp/ccWVU6UO.s:89     .text.validate_application:0000003c $d
-     /tmp/ccWVU6UO.s:94     .text.bootloader_jump_to_app:00000000 $t
-     /tmp/ccWVU6UO.s:99     .text.bootloader_jump_to_app:00000000 bootloader_jump_to_app
-     /tmp/ccWVU6UO.s:188    .text.bootloader_jump_to_app:00000018 $d
-     /tmp/ccWVU6UO.s:194    .text.bootloader_error_loop:00000000 $t
-     /tmp/ccWVU6UO.s:199    .text.bootloader_error_loop:00000000 bootloader_error_loop
-     /tmp/ccWVU6UO.s:220    .text.bootloader_error_loop:00000008 $d
-     /tmp/ccWVU6UO.s:225    .text.system_init:00000000 $t
-     /tmp/ccWVU6UO.s:231    .text.system_init:00000000 system_init
-     /tmp/ccWVU6UO.s:305    .text.system_init:00000050 $d
-     /tmp/ccWVU6UO.s:310    .text.gpio_init:00000000 $t
-     /tmp/ccWVU6UO.s:316    .text.gpio_init:00000000 gpio_init
-     /tmp/ccWVU6UO.s:376    .text.gpio_init:00000044 $d
-     /tmp/ccWVU6UO.s:382    .text.led_toggle:00000000 $t
-     /tmp/ccWVU6UO.s:388    .text.led_toggle:00000000 led_toggle
-     /tmp/ccWVU6UO.s:419    .text.led_toggle:0000001c $d
-     /tmp/ccWVU6UO.s:424    .text.delay_ms:00000000 $t
-     /tmp/ccWVU6UO.s:430    .text.delay_ms:00000000 delay_ms
-     /tmp/ccWVU6UO.s:492    .text.main:00000000 $t
-     /tmp/ccWVU6UO.s:498    .text.main:00000000 main
-     /tmp/ccWVU6UO.s:560    .text.main:0000003c $d
-     /tmp/ccWVU6UO.s:573    .bss.boot_timeout:00000000 boot_timeout
-     /tmp/ccWVU6UO.s:567    .bss.boot_flag:00000000 boot_flag
-     /tmp/ccWVU6UO.s:568    .bss.boot_flag:00000000 $d
-     /tmp/ccWVU6UO.s:570    .bss.boot_timeout:00000000 $d
+     /tmp/ccMAK5G7.s:21     .text.validate_application:00000000 $t
+     /tmp/ccMAK5G7.s:26     .text.validate_application:00000000 validate_application
+     /tmp/ccMAK5G7.s:89     .text.validate_application:0000003c $d
+     /tmp/ccMAK5G7.s:94     .text.bootloader_jump_to_app:00000000 $t
+     /tmp/ccMAK5G7.s:99     .text.bootloader_jump_to_app:00000000 bootloader_jump_to_app
+     /tmp/ccMAK5G7.s:188    .text.bootloader_jump_to_app:00000018 $d
+     /tmp/ccMAK5G7.s:194    .text.bootloader_error_loop:00000000 $t
+     /tmp/ccMAK5G7.s:199    .text.bootloader_error_loop:00000000 bootloader_error_loop
+     /tmp/ccMAK5G7.s:220    .text.bootloader_error_loop:00000008 $d
+     /tmp/ccMAK5G7.s:225    .text.system_init:00000000 $t
+     /tmp/ccMAK5G7.s:231    .text.system_init:00000000 system_init
+     /tmp/ccMAK5G7.s:305    .text.system_init:00000050 $d
+     /tmp/ccMAK5G7.s:310    .text.gpio_init:00000000 $t
+     /tmp/ccMAK5G7.s:316    .text.gpio_init:00000000 gpio_init
+     /tmp/ccMAK5G7.s:376    .text.gpio_init:00000044 $d
+     /tmp/ccMAK5G7.s:382    .text.led_toggle:00000000 $t
+     /tmp/ccMAK5G7.s:388    .text.led_toggle:00000000 led_toggle
+     /tmp/ccMAK5G7.s:419    .text.led_toggle:0000001c $d
+     /tmp/ccMAK5G7.s:424    .text.delay_ms:00000000 $t
+     /tmp/ccMAK5G7.s:430    .text.delay_ms:00000000 delay_ms
+     /tmp/ccMAK5G7.s:492    .text.main:00000000 $t
+     /tmp/ccMAK5G7.s:498    .text.main:00000000 main
+     /tmp/ccMAK5G7.s:560    .text.main:0000003c $d
+     /tmp/ccMAK5G7.s:573    .bss.boot_timeout:00000000 boot_timeout
+     /tmp/ccMAK5G7.s:567    .bss.boot_flag:00000000 boot_flag
+     /tmp/ccMAK5G7.s:568    .bss.boot_flag:00000000 $d
+     /tmp/ccMAK5G7.s:570    .bss.boot_timeout:00000000 $d
 
 UNDEFINED SYMBOLS
 SystemCoreClockUpdate

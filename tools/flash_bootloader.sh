@@ -27,16 +27,8 @@ fi
 print_info "Flashing Bootloader to STM32F401..."
 echo ""
 
-# GDB commands to flash the bootloader
-arm-none-eabi-gdb -batch \
-    -ex "target extended-remote :3333" \
-    -ex "monitor tpwr enable" \
-    -ex "monitor swd_scan" \
-    -ex "attach 1" \
-    -ex "load bootloader/build/bootloader.elf" \
-    -ex "compare-sections" \
-    -ex "kill" \
-    -ex "quit"
+# Flash bootloader using OpenOCD directly (with sudo for USB access)
+sudo openocd -d2 -f tools/openocd_stm32f4.cfg -c "program bootloader/build/bootloader.elf verify reset exit"
 
 if [ $? -eq 0 ]; then
     print_info "Bootloader flashed successfully!"
@@ -45,8 +37,5 @@ if [ $? -eq 0 ]; then
     echo "  ./tools/debug_bootloader.sh"
 else
     print_error "Flashing failed!"
-    echo ""
-    echo "Make sure OpenOCD is running:"
-    echo "  openocd -f tools/openocd_stm32f4.cfg"
     exit 1
 fi

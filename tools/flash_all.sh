@@ -24,21 +24,21 @@ echo ""
 
 # Flash bootloader
 print_info "Step 1/2: Flashing Bootloader..."
-./tools/flash_bootloader.sh
-if [ $? -ne 0 ]; then
-    print_error "Bootloader flash failed!"
+if ! ./tools/flash_bootloader.sh; then
+    print_error "Flashing Bootloader failed!"
     exit 1
 fi
-echo ""
+print_info "Bootloader flashed successfully!"
+
+sleep 2
 
 # Flash application
 print_info "Step 2/2: Flashing Application..."
-./tools/flash_application.sh
-if [ $? -ne 0 ]; then
-    print_error "Application flash failed!"
+if ! ./tools/flash_application.sh; then
+    print_error "Flashing Application failed!"
     exit 1
 fi
-echo ""
+print_info "Application flashed successfully!"
 
 print_info "=========================================="
 print_info "Flash Complete!"

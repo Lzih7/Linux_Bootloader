@@ -9,7 +9,7 @@
 - **应用程序**：带有 LED 状态指示
 - **完整的 Linux 工具链支持**：无需 Keil
 - **GDB + OpenOCD**：用于调试和烧录
-- **WSL 兼容**：适用于 Windows 用户
+- **WSL 兼容**：适用于 Windows 用户 (附带 USBIPD 指南)
 
 ## 硬件
 
@@ -71,11 +71,34 @@ arm-none-eabi-gcc --version
 openocd --version
 ```
 
-### 硬件
+### WSL 环境配置 (Windows 用户)
 
-- STM32F401 开发板 (例如：STM32F401CCU6 Black Pill)
-- ST-Link 调试器 (板载或外接)
-- 用于供电和调试的 USB 线
+如果你在 Windows 上使用 WSL，需要安装 `usbipd` 将 USB 设备（ST-Link）传递给 WSL。
+
+1. **在 Windows 上安装 usbipd** (使用 PowerShell 管理员模式):
+   ```powershell
+   winget install usbipd
+   ```
+2. **列出 USB 设备**:
+   ```powershell
+   usbipd list
+   ```
+3. **绑定设备到 WSL**:
+   ```powershell
+   # 找到 ST-Link 的 BUSID (例如 2-4)
+   usbipd attach --wsl --busid <BUSID>
+   ```
+4. **在 WSL 中验证**:
+   ```bash
+   lsusb
+   # 应该能看到 STMicroelectronics ST-LINK/V2.1
+   ```
+
+### 硬件连接
+
+- STM32F401 开发板 (例如：STM32F401CCU6 Black Pill / Nucleo)
+- ST-Link 调试器
+- USB 线
 
 ## 快速开始
 
@@ -91,15 +114,10 @@ openocd --version
 
 ### 2. 烧录到设备
 
-首先，在一个终端中启动 OpenOCD：
+无需单独启动 OpenOCD，直接运行烧录脚本即可（脚本会自动处理 OpenOCD 连接）：
 
 ```bash
-openocd -f tools/openocd_stm32f4.cfg
-```
-
-然后，在另一个终端中，烧录 Bootloader 和应用程序：
-
-```bash
+# 烧录 Bootloader 和应用程序 (推荐)
 ./tools/flash_all.sh
 ```
 
@@ -122,23 +140,25 @@ openocd -f tools/openocd_stm32f4.cfg
 
 ### 4. 调试
 
-调试 Bootloader：
+调试时需要保持 OpenOCD 在后台运行。
+
+**调试 Bootloader：**
 
 ```bash
-# 首先启动 OpenOCD
-openocd -f tools/openocd_stm32f4.cfg
+# 终端 1：启动 OpenOCD (需要 sudo 权限以访问 USB)
+sudo openocd -f tools/openocd_stm32f4.cfg
 
-# 在另一个终端中
+# 终端 2：启动 GDB
 ./tools/debug_bootloader.sh
 ```
 
-调试应用程序：
+**调试应用程序：**
 
 ```bash
-# 首先启动 OpenOCD
-openocd -f tools/openocd_stm32f4.cfg
+# 终端 1：启动 OpenOCD (需要 sudo 权限以访问 USB)
+sudo openocd -f tools/openocd_stm32f4.cfg
 
-# 在另一个终端中
+# 终端 2：启动 GDB
 ./tools/debug_application.sh
 ```
 
@@ -148,7 +168,7 @@ openocd -f tools/openocd_stm32f4.cfg
 |-------------|---------|
 | 快速闪烁 (2Hz) | Bootloader 运行中，等待超时 |
 | 慢速闪烁 (0.5Hz) | 应用程序成功运行 |
-| 常亮 | 错误 - 未找到有效的应用程序 |
+| 常亮 | 错误 - 未找到有效的应用程序 (校验失败) |
 | 熄灭 | 硬件/电源问题 |
 
 ## 构建命令
@@ -179,7 +199,7 @@ Bootloader 执行以下步骤：
 2. **应用程序验证**
    - 从应用程序向量表 (0x08010000) 读取栈指针
    - 从应用程序向量表 (0x08010004) 读取复位处理程序
-   - 验证栈指针是否指向 SRAM 范围
+   - 验证栈指针是否指向 SRAM 范围 (`SRAM_BASE` ~ `SRAM_END`)
    - 验证复位处理程序是否指向应用程序 Flash 区域
 
 3. **跳转到应用程序**
@@ -188,13 +208,6 @@ Bootloader 执行以下步骤：
    - 将向量表重定位到应用程序区域 (SCB->VTOR = 0x08010000)
    - 启用中断
    - 跳转到应用程序的复位处理程序
-
-## 应用程序详情
-
-应用程序演示了：
-- **LED 控制**：比 Bootloader 慢的速率 (视觉区分)
-- **系统初始化**：带有向量表重定位
-- **UART 支持**：(可选，用于调试)
 
 ## 故障排除
 
@@ -208,38 +221,27 @@ Bootloader 执行以下步骤：
    ```bash
    arm-none-eabi-objdump -h application/build/application.elf
    ```
-3. 检查应用程序的栈指针是否有效：
-   ```bash
-   arm-none-eabi-gdb -batch -ex "x/1x 0x08010000"
-   ```
 
 ### 无法通过 ST-Link 烧录
 
 **问题：** OpenOCD/GDB 无法连接
 
 **解决方案：**
-1. 检查 ST-Link 驱动程序安装
-2. 验证 ST-Link 是否被检测到：
-   ```bash
-   lsusb | grep STMicro
-   ```
-3. 尝试不同的 OpenOCD 配置
-4. 检查 USB 权限 (可能需要 udev 规则)
+1. **WSL 用户**：确保已通过 `usbipd` 挂载 USB 设备。
+2. 检查 ST-Link 连接线。
+3. 尝试按住复位键的同时运行烧录脚本。
+4. 如果遇到 "Address already in use" 错误，请运行 `pkill openocd`。
 
-### 编译错误
+### OpenOCD 端口占用
 
-**问题：** 构建失败并报错
+**问题：** `Error: couldn't bind gdb to socket on port 3333: Address already in use`
 
 **解决方案：**
-1. 验证工具链版本：
-   ```bash
-   arm-none-eabi-gcc --version  # 应为 10.3+
-   ```
-2. 清理并重新构建：
-   ```bash
-   ./build.sh clean && ./build.sh all
-   ```
-3. 检查是否缺少依赖项
+这意味着 OpenOCD 已经在运行了。杀死旧进程：
+```bash
+pgrep -a openocd
+pkill openocd
+```
 
 ## 开发
 
@@ -265,40 +267,6 @@ Bootloader 执行以下步骤：
    ./build.sh application
    ```
 
-### 内存限制
-
-- **Bootloader**：必须保持在 64KB 以下
-- **应用程序**：必须保持在 192KB 以下
-
-检查大小：
-```bash
-arm-none-eabi-size bootloader/build/bootloader.elf
-arm-none-eabi-size application/build/application.elf
-```
-
-## 高级主题
-
-### 向量表重定位
-
-向量表必须在两点进行重定位：
-
-1. **Bootloader**：SCB->VTOR = 0x08000000 (由 SystemInit 设置)
-2. **应用程序**：SCB->VTOR = 0x08010000 (在应用程序 main 中设置)
-
-### 为什么不使用 malloc?
-
-在 Bootloader 代码中：
-- 确定性的内存使用至关重要
-- 无堆碎片问题
-- 更简单的故障模式
-
-### 应用程序验证
-
-Bootloader 执行基本验证：
-1. 检查栈指针有效性 (必须在 SRAM 中)
-2. 检查复位处理程序有效性 (必须在应用程序 Flash 中)
-3. 可选：校验和验证 (基础版本中未实现)
-
 ## 资源
 
 - [STM32F401 参考手册 (RM0368)](https://www.st.com/resource/en/reference_manual/rm0368-stm32f401xbxc-and-stm32f401xdxe-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
@@ -310,27 +278,12 @@ Bootloader 执行基本验证：
 
 本项目按“原样”提供，用于教育目的。
 
-## 贡献
-
-为本项目做贡献时，请遵循 `AGENTS.md` 中的指南。
-
-## 支持
-
-对于问题和疑问：
-1. 检查故障排除部分
-2. 查看代码注释
-3. 查阅 STM32 参考手册
-4. 检查 OpenOCD/GDB 文档
-
 ## 更新日志
+
+### 版本 1.0.1 (2025-03-11)
+- **修复**: 修正了 Bootloader 中的栈指针校验逻辑 (`main.c`)。
+- **改进**: 优化了烧录脚本 (`flash_all.sh`)，现在直接调用 OpenOCD 而不需要手动开启服务。
+- **文档**: 添加了 WSL 环境下的 USBIPD 配置指南。
 
 ### 版本 1.0.0 (2025-03-10)
 - 初始发布
-- 带有应用程序验证的基本 Bootloader
-- LED 状态指示
-- 完整的构建和烧录工具链
-- 文档
-
----
-
-**祝编码愉快！** 🚀
