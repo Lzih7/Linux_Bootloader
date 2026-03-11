@@ -27,8 +27,8 @@ fi
 print_info "Flashing Application to STM32F401..."
 echo ""
 
-# Flash application using OpenOCD directly (with sudo for USB access)
-sudo openocd -d2 -f tools/openocd_stm32f4.cfg -c "program application/build/application.elf verify reset exit"
+# Flash application using OpenOCD directly
+openocd -f tools/openocd_stm32f4.cfg -c "program application/build/application.elf verify reset exit"
 
 if [ $? -eq 0 ]; then
     print_info "Application flashed successfully!"

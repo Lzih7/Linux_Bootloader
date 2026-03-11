@@ -70,6 +70,17 @@ sudo apt-get install gcc-arm-none-eabi libnewlib-arm-none-eabi openocd
 arm-none-eabi-gcc --version
 openocd --version
 ```
+### 工具链安装
+
+```bash
+# Ubuntu/Debian/WSL
+sudo apt-get update
+sudo apt-get install gcc-arm-none-eabi libnewlib-arm-none-eabi openocd
+
+# 验证安装
+arm-none-eabi-gcc --version
+openocd --version
+```
 
 ### WSL 环境配置 (Windows 用户)
 
@@ -115,6 +126,8 @@ openocd --version
 ### 2. 烧录到设备
 
 无需单独启动 OpenOCD，直接运行烧录脚本即可（脚本会自动处理 OpenOCD 连接）：
+
+> **注意 (WSL 用户)**: 烧录脚本使用 `sudo` 来访问 USB 设备，运行时可能需要输入您的 WSL 密码。
 
 ```bash
 # 烧录 Bootloader 和应用程序 (推荐)

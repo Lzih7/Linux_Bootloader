@@ -1,22 +1,21 @@
-# STM32F401RET6 配置更新总结
+# STM32F401RET6 配置总结
 
-## 更新内容
-
-项目已从 **STM32F401CCU6** 更新为 **STM32F401RET6**。
+<br />
 
 ## 主要区别
 
-| 参数 | STM32F401CCU6 | STM32F401RET6 | 变化 |
-|------|---------------|---------------|------|
-| Flash | 256 KB | **512 KB** | +256 KB ✨ |
-| SRAM | 64 KB | **96 KB** | +32 KB ✨ |
-| Application空间 | 192 KB | **448 KB** | +256 KB ✨ |
+| 参数            | STM32F401CCU6 | STM32F401RET6 | 变化        |
+| ------------- | ------------- | ------------- | --------- |
+| Flash         | 256 KB        | **512 KB**    | +256 KB ✨ |
+| SRAM          | 64 KB         | **96 KB**     | +32 KB ✨  |
+| Application空间 | 192 KB        | **448 KB**    | +256 KB ✨ |
 
 ## 更新的文件
 
 ### 1. 链接脚本
 
-**bootloader/ld/STM32F401VCTx_BOOTLOADER.ld:**
+**bootloader/ld/STM32F401VCTx\_BOOTLOADER.ld:**
+
 ```ld
 MEMORY
 {
@@ -25,7 +24,8 @@ MEMORY
 }
 ```
 
-**application/ld/STM32F401VCTx_APPLICATION.ld:**
+**application/ld/STM32F401VCTx\_APPLICATION.ld:**
+
 ```ld
 MEMORY
 {
@@ -37,6 +37,7 @@ MEMORY
 ### 2. 头文件
 
 **bootloader/inc/main.h:**
+
 ```c
 #define APP_START_ADDR           0x08010000U  /* 不变 */
 #define APP_END_ADDR             0x0807FFFFU  /* 更新: 0x0803FFFF → 0x0807FFFF */
@@ -45,14 +46,9 @@ MEMORY
 #define SRAM_END                 0x20017FFFU  /* 更新: 0x2000FFFF → 0x20017FFF */
 ```
 
-### 3. 文档
+<br />
 
-更新的文档文件：
-- ✅ `AGENTS.md` - 编码指南
-- ✅ `README.md` - 项目说明
-- ✅ `docs/STM32F401RET6_CONFIG.md` - 新增配置说明
-
-## 新的内存布局
+## 内存布局
 
 ### Flash (512 KB 总计)
 
@@ -86,7 +82,7 @@ MEMORY
 
 ✅ **完全兼容！** 所有代码无需修改，因为：
 
-1. **启动文件相同** - startup_stm32f401xc.s 适用于所有STM32F401系列
+1. **启动文件相同** - startup\_stm32f401xc.s 适用于所有STM32F401系列
 2. **CMSIS定义相同** - 寄存器定义完全兼容
 3. **外设相同** - GPIO、RCC、UART等外设相同
 4. **只需要更新链接脚本** - 告诉编译器正确的内存大小
@@ -151,6 +147,7 @@ ls -lh application/build/application.bin
 ```
 
 预期结果：
+
 - bootloader.bin < 64 KB ✅
 - application.bin < 448 KB ✅
 
@@ -168,11 +165,13 @@ arm-none-eabi-objdump -h application/build/application.elf
 更大的Flash和SRAM带来：
 
 ### ✅ 更大的应用程序空间
+
 - 448 KB vs 192 KB (+2.3倍)
 - 可以开发更复杂的应用
 - 更多空间存储资源和数据
 
 ### ✅ 更多的RAM
+
 - 96 KB vs 64 KB (+50%)
 - 更大的缓冲区
 - 更多的栈空间
@@ -211,6 +210,7 @@ openocd -f tools/openocd_stm32f4.cfg
 ### LED不闪烁
 
 检查：
+
 1. 芯片型号确认
 2. LED引脚是否正确（Nucleo: PA5, Black Pill: PC13）
 3. 使用GDB检查程序是否运行

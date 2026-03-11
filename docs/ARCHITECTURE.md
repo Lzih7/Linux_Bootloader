@@ -1,62 +1,62 @@
-# STM32 Bootloader - Architecture and Code Details
+# STM32 Bootloader - 架构与代码详情
 
-## Table of Contents
+## 目录
 
-1. [System Overview](#system-overview)
-2. [Bootloader Implementation](#bootloader-implementation)
-3. [Application Implementation](#application-implementation)
-4. [Startup Sequence](#startup-sequence)
-5. [Linker Scripts Explained](#linker-scripts-explained)
-6. [Memory Layout in Detail](#memory-layout-in-detail)
-7. [Vector Table Management](#vector-table-management)
-8. [Bootloader Jump Mechanism](#bootloader-jump-mechanism)
-9. [Build System](#build-system)
-10. [Debugging Guide](#debugging-guide)
+1. [系统概览](#system-overview)
+2. [Bootloader 实现](#bootloader-implementation)
+3. [应用程序实现](#application-implementation)
+4. [启动序列](#startup-sequence)
+5. [链接脚本详解](#linker-scripts-explained)
+6. [内存布局详情](#memory-layout-in-detail)
+7. [向量表管理](#vector-table-management)
+8. [Bootloader 跳转机制](#bootloader-jump-mechanism)
+9. [构建系统](#build-system)
+10. [调试指南](#debugging-guide)
 
-## System Overview
+## 系统概览
 
-The STM32 Bootloader project implements a two-stage firmware architecture:
+本项目 STM32 Bootloader 实现了一个两阶段的固件架构：
 
 ```
-Reset → Bootloader (0x08000000) → Application (0x08010000)
+复位 (Reset) → Bootloader (0x08000000) → 应用程序 (Application) (0x08010000)
 ```
 
-### Why Two Stages?
+### 为什么需要两阶段？
 
-1. **Field Updates:** Bootloader stays fixed, application can be updated
-2. **Recovery:** If application fails, bootloader can recover
-3. **Security:** Bootloader can validate application before running
-4. **Flexibility:** Multiple applications can be swapped
+1. **现场更新 (Field Updates):** Bootloader 保持不变，应用程序可以更新。
+2. **恢复 (Recovery):** 如果应用程序失败，Bootloader 可以进行恢复。
+3. **安全性 (Security):** Bootloader 可以在运行前验证应用程序。
+4. **灵活性 (Flexibility):** 可以交换多个应用程序。
 
-## Bootloader Implementation
+## Bootloader 实现
 
-### Entry Point: `main.c`
+### 入口点：`main.c`
 
-Located in `bootloader/src/main.c`
+位于 `bootloader/src/main.c`
 
-#### 1. System Initialization
+#### 1. 系统初始化
 
 ```c
 void system_init(void)
 {
-  /* Enable HSI (Internal 16MHz RC oscillator) */
+  /* 启用 HSI (内部 16MHz RC 振荡器) */
   RCC->CR |= RCC_CR_HSION;
   while (!(RCC->CR & RCC_CR_HSIRDY));
   
-  /* Reset all clock settings to default */
+  /* 将所有时钟设置重置为默认值 */
   RCC->CFGR = 0x00000000;
   
-  /* Disable all interrupts */
+  /* 禁用所有中断 */
   RCC->CIR = 0x00000000;
 }
 ```
 
-**Why HSI?**
-- Internal oscillator, no external crystal needed
-- Always available after reset
-- Sufficient for bootloader operation
+**为什么使用 HSI？**
+- 内部振荡器，无需外部晶振。
+- 复位后始终可用。
+- 足以满足 Bootloader 的运行需求。
 
-#### 2. Application Validation
+#### 2. 应用程序验证
 
 ```c
 static int32_t validate_application(void)
@@ -64,12 +64,12 @@ static int32_t validate_application(void)
   uint32_t app_stack_ptr = *(volatile uint32_t *)(APP_START_ADDR);
   uint32_t app_reset_handler = *(volatile uint32_t *)(APP_START_ADDR + 4);
   
-  /* Validate stack pointer points to SRAM */
+  /* 验证栈指针是否指向 SRAM */
   if (app_stack_ptr < SRAM_BASE || app_stack_ptr > SRAM_END) {
     return BOOTLOADER_ERR_INVALID_APP;
   }
   
-  /* Validate reset handler points to application flash */
+  /* 验证复位处理程序是否指向应用程序 Flash */
   if (app_reset_handler < APP_START_ADDR || app_reset_handler > APP_END_ADDR) {
     return BOOTLOADER_ERR_INVALID_APP;
   }
@@ -78,20 +78,20 @@ static int32_t validate_application(void)
 }
 ```
 
-**What's Being Checked?**
+**检查了什么？**
 
-The Cortex-M vector table structure:
+Cortex-M 向量表结构：
 ```
-Offset 0: Initial Stack Pointer (MSP)
-Offset 4: Reset Handler address
-Offset 8+: Interrupt handlers
+偏移 0: 初始栈指针 (MSP)
+偏移 4: 复位处理程序地址 (Reset Handler)
+偏移 8+: 中断处理程序
 ```
 
-We read the first two entries and verify:
-- Stack pointer is in valid SRAM range (0x20000000-0x2000FFFF)
-- Reset handler points to application flash (0x08010000-0x0803FFFF)
+我们读取前两个条目并验证：
+- 栈指针是否在有效的 SRAM 范围内 (0x20000000-0x2000FFFF)
+- 复位处理程序是否指向应用程序 Flash 区域 (0x08010000-0x0803FFFF)
 
-#### 3. The Jump
+#### 3. 跳转
 
 ```c
 static void bootloader_jump_to_app(void)
@@ -101,61 +101,61 @@ static void bootloader_jump_to_app(void)
   uint32_t app_stack_ptr = *(volatile uint32_t *)(APP_START_ADDR);
   uint32_t app_reset_handler = *(volatile uint32_t *)(APP_START_ADDR + 4);
   
-  /* Critical: Disable interrupts before vector table switch */
+  /* 关键：在切换向量表之前禁用中断 */
   __disable_irq();
   
-  /* Set main stack pointer to application's stack */
+  /* 将主栈指针设置为应用程序的栈 */
   __set_MSP(app_stack_ptr);
   
-  /* Relocate vector table */
+  /* 重定位向量表 */
   SCB->VTOR = APP_START_ADDR;
   
-  /* Re-enable interrupts */
+  /* 重新启用中断 */
   __enable_irq();
   
-  /* Jump to application */
+  /* 跳转到应用程序 */
   pFunction app_entry = (pFunction)app_reset_handler;
   app_entry();
 }
 ```
 
-**Why Disable Interrupts?**
-- Prevents interrupt handlers from running during transition
-- Ensures atomic state change
-- Avoids calling bootloader ISRs with application context
+**为什么要禁用中断？**
+- 防止在转换期间运行中断处理程序。
+- 确保原子状态更改。
+- 避免使用应用程序上下文调用 Bootloader 的 ISR。
 
-**Why Set MSP?**
-- Each program has its own stack
-- Application expects its stack pointer at reset
-- Prevents stack corruption
+**为什么要设置 MSP？**
+- 每个程序都有自己的栈。
+- 应用程序期望其栈指针在复位时已设置。
+- 防止栈损坏。
 
-**Why Relocate VTOR?**
-- Cortex-M4 has configurable vector table offset
+**为什么要重定位 VTOR？**
+- Cortex-M4 具有可配置的向量表偏移量。
 - Bootloader: VTOR = 0x08000000
-- Application: VTOR = 0x08010000
-- Interrupt handlers must come from application's vector table
+- 应用程序: VTOR = 0x08010000
+- 中断处理程序必须来自应用程序的向量表。
 
-## Application Implementation
+## 应用程序实现
 
-### Entry Point: `main.c`
+### 入口点：`main.c`
 
-Located in `application/src/main.c`
+位于 `application/src/main.c`
 
-#### Critical First Step
+#### 关键的第一步
 
 ```c
 void main(void)
 {
-  /* MUST DO THIS FIRST! */
+  /* 必须首先执行此操作！ */
   __disable_irq();
-  SCB->VTOR = 0x08010000;  /* Application vector table */
+  SCB->VTOR = 0x08010000;  /* 应用程序向量表 */
   __enable_irq();
   
-  /* Now safe to initialize peripherals */
+  /* 现在可以安全地初始化外设 */
   system_init();
   gpio_init();
   
-  /* Application loop */
+  /* 应用程序循环 */
   while (1) {
     led_toggle();
     delay_ms(500);
@@ -163,62 +163,62 @@ void main(void)
 }
 ```
 
-**Why is This Necessary?**
+**为什么这是必要的？**
 
-When bootloader jumps to application:
-1. VTOR still points to bootloader's vector table (0x08000000)
-2. Application's ISRs are at 0x08010000
-3. If interrupt fires before VTOR update, wrong ISR runs!
-4. **Crash or undefined behavior**
+当 Bootloader 跳转到应用程序时：
+1. VTOR 仍然指向 Bootloader 的向量表 (0x08000000)。
+2. 应用程序的 ISR 位于 0x08010000。
+3. 如果在 VTOR 更新之前触发中断，将运行错误的 ISR！
+4. **导致崩溃或未定义行为**。
 
-## Startup Sequence
+## 启动序列
 
-### Power-On Reset Flow
+### 上电复位流程
 
 ```
-1. Hardware Reset
+1. 硬件复位
    ↓
-2. CPU fetches initial SP from 0x00000000 (0x08000000)
+2. CPU 从 0x00000000 (0x08000000) 获取初始 SP
    ↓
-3. CPU fetches reset vector from 0x00000004
+3. CPU 从 0x00000004 获取复位向量
    ↓
-4. Reset_Handler (in startup_stm32f401xc.s)
+4. Reset_Handler (位于 startup_stm32f401xc.s)
    ↓
-5. Copy .data section from flash to RAM
+5. 将 .data 段从 Flash 复制到 RAM
    ↓
-6. Zero .bss section
+6. 将 .bss 段清零
    ↓
-7. Call SystemInit()
+7. 调用 SystemInit()
    ↓
-8. Call __libc_init_array (C++ constructors)
+8. 调用 __libc_init_array (C++ 构造函数)
    ↓
-9. Call main()
+9. 调用 main()
    ↓
-10. Bootloader validates application
+10. Bootloader 验证应用程序
    ↓
-11. Bootloader jumps to application
+11. Bootloader 跳转到应用程序
    ↓
-12. Application main() runs
+12. 应用程序 main() 运行
 ```
 
-### Startup File Analysis
+### 启动文件分析
 
-File: `common/startup/startup_stm32f401xc.s`
+文件：`common/startup/startup_stm32f401xc.s`
 
 #### Reset_Handler
 
 ```assembly
 Reset_Handler:
-  ldr   sp, =_estack      /* Set stack pointer */
+  ldr   sp, =_estack      /* 设置栈指针 */
   
-  /* Copy .data from flash to RAM */
+  /* 将 .data 从 Flash 复制到 RAM */
   movs  r1, #0
   b     LoopCopyDataInit
 
 CopyDataInit:
-  ldr   r3, =_sidata      /* Source: flash */
+  ldr   r3, =_sidata      /* 源：Flash */
   ldr   r3, [r3, r1]
-  str   r3, [r0, r1]      /* Dest: RAM */
+  str   r3, [r0, r1]      /* 目标：RAM */
   adds  r1, r1, #4
 
 LoopCopyDataInit:
@@ -228,7 +228,7 @@ LoopCopyDataInit:
   cmp   r2, r3
   bcc   CopyDataInit
   
-  /* Zero .bss section */
+  /* 将 .bss 段清零 */
   ldr   r2, =_sbss
   ldr   r4, =_ebss
   movs  r3, #0
@@ -238,240 +238,240 @@ FillZerobss:
   cmp   r2, r4
   bcc   FillZerobss
 
-  /* Call system init */
+  /* 调用系统初始化 */
   bl  SystemInit
   
-  /* Call C++ constructors */
+  /* 调用 C++ 构造函数 */
   bl __libc_init_array
   
-  /* Call main */
+  /* 调用 main */
   bl  main
   
-  /* Should never return */
+  /* 不应返回 */
   bx  lr
 ```
 
-**What's Happening?**
+**发生了什么？**
 
-1. **Set Stack Pointer:** Load `_estack` (top of RAM) into SP
-2. **Copy .data:** Initialize variables with default values
-3. **Zero .bss:** Clear uninitialized variables
-4. **SystemInit:** Configure clocks, etc.
-5. **Main:** Enter C code
+1. **设置栈指针：** 将 `_estack` (RAM 顶部) 加载到 SP。
+2. **复制 .data：** 使用默认值初始化变量。
+3. **清零 .bss：** 清除未初始化的变量。
+4. **SystemInit：** 配置时钟等。
+5. **Main：** 进入 C 代码。
 
-## Linker Scripts Explained
+## 链接脚本详解
 
-### Bootloader Linker Script
+### Bootloader 链接脚本
 
-File: `bootloader/ld/STM32F401VCTx_BOOTLOADER.ld`
+文件：`bootloader/ld/STM32F401VCTx_BOOTLOADER.ld`
 
 ```ld
 MEMORY
 {
   RAM (xrw)    : ORIGIN = 0x20000000,   LENGTH = 64K
-  FLASH (rx)   : ORIGIN = 0x08000000,   LENGTH = 64K  /* Bootloader region */
+  FLASH (rx)   : ORIGIN = 0x08000000,   LENGTH = 64K  /* Bootloader 区域 */
 }
 ```
 
-**Key Sections:**
+**关键段：**
 
 ```ld
 .isr_vector :
 {
   . = ALIGN(4);
-  KEEP(*(.isr_vector))    /* Vector table at start of flash */
+  KEEP(*(.isr_vector))    /* 向量表位于 Flash 起始处 */
   . = ALIGN(4);
 } >FLASH
 
 .text :
 {
-  *(.text)                /* Code */
-  *(.rodata*)             /* Constants */
+  *(.text)                /* 代码 */
+  *(.rodata*)             /* 常量 */
   _etext = .;
 } >FLASH
 
 .data :
 {
   _sdata = .;
-  *(.data)                /* Initialized data */
+  *(.data)                /* 已初始化的数据 */
   _edata = .;
-} >RAM AT> FLASH          /* Load from flash, execute in RAM */
+} >RAM AT> FLASH          /* 从 Flash 加载，在 RAM 中执行 */
 
 .bss :
 {
   _sbss = .;
-  *(.bss)                 /* Uninitialized data */
+  *(.bss)                 /* 未初始化的数据 */
   *(COMMON)
   _ebss = .;
 } >RAM
 ```
 
-**What Do These Mean?**
+**这些是什么意思？**
 
-- `.isr_vector`: Interrupt vector table (MUST be at flash start)
-- `.text`: Program code (stored in flash)
-- `.data`: Initialized global variables (flash→RAM on startup)
-- `.bss`: Uninitialized globals (zeroed on startup)
+- `.isr_vector`: 中断向量表（必须位于 Flash 起始处）。
+- `.text`: 程序代码（存储在 Flash 中）。
+- `.data`: 已初始化的全局变量（启动时 Flash→RAM）。
+- `.bss`: 未初始化的全局变量（启动时清零）。
 
-### Application Linker Script
+### 应用程序链接脚本
 
-File: `application/ld/STM32F401VCTx_APPLICATION.ld`
+文件：`application/ld/STM32F401VCTx_APPLICATION.ld`
 
 ```ld
 MEMORY
 {
   RAM (xrw)    : ORIGIN = 0x20000000,   LENGTH = 64K
-  FLASH (rx)   : ORIGIN = 0x08010000,   LENGTH = 192K  /* 64KB offset! */
+  FLASH (rx)   : ORIGIN = 0x08010000,   LENGTH = 192K  /* 64KB 偏移！ */
 }
 ```
 
-**Critical Difference:**
-- Bootloader starts at `0x08000000`
-- Application starts at `0x08010000` (64KB offset)
+**关键区别：**
+- Bootloader 开始于 `0x08000000`
+- 应用程序开始于 `0x08010000` (64KB 偏移)
 
-This creates two independent firmware images!
+这创建了两个独立的固件镜像！
 
-## Memory Layout in Detail
+## 内存布局详情
 
-### Flash Memory Map
+### Flash 内存映射
 
 ```
-Address    Size    Contents
+地址         大小    内容
 --------   ----    --------------------------
-0x08000000 64KB    Bootloader (fixed)
-  ├─ 0x0000       Vector table
-  ├─ 0x0100       Bootloader code
-  └─ 0xFFFF       Bootloader end
+0x08000000 64KB    Bootloader (固定)
+  ├─ 0x0000       向量表
+  ├─ 0x0100       Bootloader 代码
+  └─ 0xFFFF       Bootloader 结束
 
-0x08010000 192KB   Application (updatable)
-  ├─ 0x0000       Vector table
-  ├─ 0x0100       Application code
-  └─ 0x2FFFF      Application end
+0x08010000 192KB   应用程序 (可更新)
+  ├─ 0x0000       向量表
+  ├─ 0x0100       应用程序代码
+  └─ 0x2FFFF      应用程序结束
 
-0x08040000 -       Unused (256KB total)
+0x08040000 -       未使用 (总共 256KB)
 ```
 
-### RAM Usage
+### RAM 使用情况
 
 ```
-Address    Size    Contents
+地址         大小    内容
 --------   ----    --------------------------
-0x20000000 64KB    Main SRAM
-  ├─ 0x0000       Bootloader stack (top)
+0x20000000 64KB    主 SRAM
+  ├─ 0x0000       Bootloader 栈 (顶部)
   ├─ 0x1000       Bootloader .data/.bss
-  ├─ 0x2000       Application stack
-  └─ 0x3FFF       Application .data/.bss (bottom)
+  ├─ 0x2000       应用程序栈
+  └─ 0x3FFF       应用程序 .data/.bss (底部)
 ```
 
-Both bootloader and application use the same RAM, but at different times!
+Bootloader 和应用程序都使用相同的 RAM，但在不同的时间！
 
-## Vector Table Management
+## 向量表管理
 
-### What is the Vector Table?
+### 什么是向量表？
 
-An array of function pointers at the start of flash:
+位于 Flash 起始处的函数指针数组：
 
 ```c
 __attribute__((section(".isr_vector")))
 const void* g_vector_table[] = {
-  (void*)0x20010000,      // Initial Stack Pointer
-  Reset_Handler,          // Reset Handler
-  NMI_Handler,            // NMI Handler
-  HardFault_Handler,      // Hard Fault Handler
-  // ... more handlers
+  (void*)0x20010000,      // 初始栈指针
+  Reset_Handler,          // 复位处理程序
+  NMI_Handler,            // NMI 处理程序
+  HardFault_Handler,      // Hard Fault 处理程序
+  // ... 更多处理程序
 };
 ```
 
-### VTOR Register
+### VTOR 寄存器
 
-The **Vector Table Offset Register** (VTOR) tells the CPU where to find the vector table:
+**向量表偏移寄存器** (VTOR) 告诉 CPU 在哪里可以找到向量表：
 
 ```
-Bootloader mode:  SCB->VTOR = 0x08000000
-Application mode: SCB->VTOR = 0x08010000
+Bootloader 模式:  SCB->VTOR = 0x08000000
+应用程序 模式:    SCB->VTOR = 0x08010000
 ```
 
-When an interrupt fires:
-1. CPU reads VTOR
-2. Adds interrupt number × 4
-3. Fetches handler address
-4. Jumps to handler
+当中断触发时：
+1. CPU 读取 VTOR。
+2. 加上中断号 × 4。
+3. 获取处理程序地址。
+4. 跳转到处理程序。
 
-**This is why VTOR MUST match the active firmware!**
+**这就是为什么 VTOR 必须匹配当前活动的固件！**
 
-## Bootloader Jump Mechanism
+## Bootloader 跳转机制
 
-### Detailed Step-by-Step
+### 详细步骤
 
 ```c
 void bootloader_jump_to_app(void) {
-  // Step 1: Read application's initial state
-  uint32_t app_sp = *(uint32_t*)(0x08010000 + 0x00);  // Stack pointer
-  uint32_t app_pc = *(uint32_t*)(0x08010000 + 0x04);  // Reset handler
+  // 步骤 1: 读取应用程序的初始状态
+  uint32_t app_sp = *(uint32_t*)(0x08010000 + 0x00);  // 栈指针
+  uint32_t app_pc = *(uint32_t*)(0x08010000 + 0x04);  // 复位处理程序
   
-  // Step 2: Disable interrupts (critical!)
+  // 步骤 2: 禁用中断 (关键！)
   __disable_irq();
   
-  // Step 3: Switch to application's stack
+  // 步骤 3: 切换到应用程序的栈
   __set_MSP(app_sp);
   
-  // Step 4: Point to application's vector table
+  // 步骤 4: 指向应用程序的向量表
   SCB->VTOR = 0x08010000;
   
-  // Step 5: Re-enable interrupts
+  // 步骤 5: 重新启用中断
   __enable_irq();
   
-  // Step 6: Jump to application
+  // 步骤 6: 跳转到应用程序
   ((void(*)())app_pc)();
 }
 ```
 
-### What Happens to the CPU?
+### CPU 发生了什么？
 
-**Before Jump:**
-- PC = somewhere in bootloader
-- SP = bootloader's stack
-- VTOR = bootloader's vector table
-- Interrupts = enabled
+**跳转前：**
+- PC = Bootloader 中的某处
+- SP = Bootloader 的栈
+- VTOR = Bootloader 的向量表
+- 中断 = 已启用
 
-**After Jump:**
-- PC = application's reset handler
-- SP = application's stack
-- VTOR = application's vector table
-- Interrupts = enabled
+**跳转后：**
+- PC = 应用程序的复位处理程序
+- SP = 应用程序的栈
+- VTOR = 应用程序的向量表
+- 中断 = 已启用
 
-The transition must be **atomic** - no interrupts in between!
+转换必须是 **原子的** - 中间没有中断！
 
-## Build System
+## 构建系统
 
-### Makefile Breakdown
+### Makefile 解析
 
 ```makefile
-# Compiler
+# 编译器
 CC = arm-none-eabi-gcc
 
-# Flags for Cortex-M4
+# Cortex-M4 的标志
 MCU = -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
-# Include paths
+# 包含路径
 C_INCLUDES = -I../bootloader/inc -I../common/cmsis/core
 
-# Compile
+# 编译
 $(BUILD_DIR)/%.o: %.c
     $(CC) -c $(CFLAGS) $< -o $@
 
-# Link
+# 链接
 $(BUILD_DIR)/bootloader.elf: $(OBJECTS)
     $(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
-# Create binary
+# 创建二进制文件
 $(BUILD_DIR)/bootloader.bin: $(BUILD_DIR)/bootloader.elf
     arm-none-eabi-objcopy -O binary $< $@
 ```
 
-### Build Script
+### 构建脚本
 
-`build.sh` orchestrates the build:
+`build.sh` 编排构建过程：
 
 ```bash
 build_bootloader() {
@@ -489,132 +489,132 @@ build_application() {
 }
 ```
 
-## Debugging Guide
+## 调试指南
 
-### Using GDB with OpenOCD
+### 使用 GDB 和 OpenOCD
 
-**Setup:**
+**设置：**
 ```bash
-# Terminal 1: Start OpenOCD
+# 终端 1: 启动 OpenOCD
 openocd -f tools/openocd_stm32f4.cfg
 
-# Terminal 2: Start GDB
+# 终端 2: 启动 GDB
 arm-none-eabi-gdb bootloader/build/bootloader.elf
 ```
 
-**Common GDB Commands:**
+**常用 GDB 命令：**
 
 ```gdb
-# Connect to target
+# 连接到目标
 (gdb) target extended-remote :3333
 
-# Load firmware
+# 加载固件
 (gdb) load
 
-# Set breakpoint
+# 设置断点
 (gdb) break main
 
-# Run
+# 运行
 (gdb) continue
 
-# Step through code
+# 单步执行
 (gdb) step
 
-# Show registers
+# 显示寄存器
 (gdb) info registers
 
-# Examine memory
+# 检查内存
 (gdb) x/10x 0x08000000
 
-# Show vector table
+# 显示向量表
 (gdb) x/10x 0x08010000
 ```
 
-### Debugging the Jump
+### 调试跳转
 
-**Problem:** Application crashes after bootloader jump
+**问题：** Bootloader 跳转后应用程序崩溃。
 
-**Debug Steps:**
+**调试步骤：**
 
-1. **Check application vector table:**
+1. **检查应用程序向量表：**
    ```gdb
    (gdb) x/2x 0x08010000
    0x08010000:    0x20010000    0x08010189
    ```
-   - First value: Stack pointer (should be in RAM)
-   - Second value: Reset handler (should be in application flash)
+   - 第一个值：栈指针 (应在 RAM 中)
+   - 第二个值：复位处理程序 (应在应用程序 Flash 中)
 
-2. **Check VTOR before jump:**
+2. **跳转前检查 VTOR：**
    ```gdb
    (gdb) print/x $systick
    (gdb) print/x SCB->VTOR
    ```
 
-3. **Check SP after jump:**
+3. **跳转后检查 SP：**
    ```gdb
    (gdb) print $sp
    ```
 
-4. **Single-step through jump:**
+4. **单步执行跳转：**
    ```gdb
    (gdb) break bootloader_jump_to_app
    (gdb) continue
    (gdb) stepi
    ```
 
-### Common Issues
+### 常见问题
 
-**Issue 1: HardFault immediately after jump**
+**问题 1：跳转后立即 HardFault**
 
-Cause: Stack pointer or reset handler invalid
+原因：栈指针或复位处理程序无效。
 
-Solution: Check vector table validity
+解决方案：检查向量表有效性。
 ```gdb
 (gdb) x/2x 0x08010000
 ```
 
-**Issue 2: Interrupts crash**
+**问题 2：中断崩溃**
 
-Cause: VTOR not updated
+原因：VTOR 未更新。
 
-Solution: Ensure VTOR is set before enabling interrupts
+解决方案：确保在启用中断前设置 VTOR。
 ```c
 __disable_irq();
-SCB->VTOR = 0x08010000;  // MUST do this!
+SCB->VTOR = 0x08010000;  // 必须执行此操作！
 __enable_irq();
 ```
 
-**Issue 3: Application won't start**
+**问题 3：应用程序无法启动**
 
-Cause: Bootloader validation failing
+原因：Bootloader 验证失败。
 
-Solution: Check application is built for correct address
+解决方案：检查应用程序是否为正确的地址构建。
 ```bash
 arm-none-eabi-objdump -h application/build/application.elf
 ```
 
-Look for:
+查找：
 ```
 Idx Name          Size      VMA       LMA
   0 .isr_vector   0x000188  08010000  08010000
 ```
 
-VMA should be `08010000` not `08000000`!
+VMA 应该是 `08010000` 而不是 `08000000`！
 
 ---
 
-## Conclusion
+## 结论
 
-This architecture provides a solid foundation for:
-- **Over-the-air updates** (add wireless communication)
-- **Secure boot** (add cryptographic verification)
-- **Factory reset** (keep fallback image in flash)
-- **Multiple applications** (switch between different firmware)
+此架构为以下功能提供了坚实的基础：
+- **无线更新 (Over-the-air updates)** (添加无线通信)
+- **安全启动 (Secure boot)** (添加加密验证)
+- **出厂重置 (Factory reset)** (在 Flash 中保留回退镜像)
+- **多应用程序 (Multiple applications)** (在不同固件之间切换)
 
-The key principles are:
-1. **Isolate** bootloader and application in separate flash regions
-2. **Validate** application before jumping
-3. **Carefully** manage vector table and stack pointer
-4. **Make** the jump atomic with interrupts disabled
+关键原则是：
+1. **隔离 (Isolate)** Bootloader 和应用程序在不同的 Flash 区域。
+2. **验证 (Validate)** 跳转前验证应用程序。
+3. **小心 (Carefully)** 管理向量表和栈指针。
+4. **确保 (Make)** 跳转是原子的，并禁用中断。
 
-Happy coding! 🚀
+编码愉快！ 🚀

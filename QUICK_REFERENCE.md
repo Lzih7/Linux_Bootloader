@@ -1,42 +1,21 @@
 # STM32F401RET6 Bootloader 快速参考
 
-## 快速命令
-
-```bash
-# 编译全部
-./build.sh all
-
-# 验证配置
-./verify_config.sh
-./verify_ld.sh
-
-# 烧录（需要两个终端）
-# 终端1:
-openocd -f tools/openocd_stm32f4.cfg
-# 终端2:
-./tools/flash_all.sh
-
-# 调试
-./tools/debug_bootloader.sh
-./tools/debug_application.sh
-```
-
 ## 内存布局
 
-| 区域 | 起始地址 | 大小 | 用途 |
-|------|---------|------|------|
-| Bootloader | 0x08000000 | 64 KB | 引导程序 |
+| 区域          | 起始地址       | 大小     | 用途   |
+| ----------- | ---------- | ------ | ---- |
+| Bootloader  | 0x08000000 | 64 KB  | 引导程序 |
 | Application | 0x08010000 | 448 KB | 应用程序 |
-| SRAM | 0x20000000 | 96 KB | 内存 |
+| SRAM        | 0x20000000 | 96 KB  | 内存   |
 
 ## LED 状态
 
-| LED | 含义 |
-|-----|------|
-| 快速闪烁 (2Hz) | Bootloader运行 |
+| LED          | 含义              |
+| ------------ | --------------- |
+| 快速闪烁 (2Hz)   | Bootloader运行    |
 | 慢速闪烁 (0.5Hz) | Application运行 ✅ |
-| 常亮 | 错误 |
-| 不亮 | 硬件问题 |
+| 常亮           | 错误              |
+| 不亮           | 硬件问题            |
 
 ## 芯片规格
 
@@ -63,3 +42,4 @@ openocd -f tools/openocd_stm32f4.cfg
 - 完整文档: `README.md`
 - 配置说明: `docs/STM32F401RET6_CONFIG.md`
 - 架构详解: `docs/ARCHITECTURE.md`
+
