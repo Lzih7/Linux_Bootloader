@@ -2,24 +2,22 @@
   ******************************************************************************
   * @file      startup_stm32f401xe.s
   * @author    MCD Application Team
-  * @brief     STM32F401xExx Devices vector table for GCC based toolchains. 
-  *            This module performs:
-  *                - Set the initial SP
-  *                - Set the initial PC == Reset_Handler,
-  *                - Set the vector table entries with the exceptions ISR address
-  *                - Branches to main in the C library (which eventually
-  *                  calls main()).
-  *            After Reset the Cortex-M4 processor is in Thread mode,
-  *            priority is Privileged, and the Stack is set to Main.
+  * @brief     基于 GCC 工具链的 STM32F401xExx 设备中断向量表。
+  *            本模块完成以下工作：
+  *                - 设置初始 SP（栈指针）
+  *                - 设置初始 PC = Reset_Handler
+  *                - 配置异常与中断 ISR 地址到向量表
+  *                - 跳转到 C 库中的 main（最终会调用用户 main()）
+  *            复位后，Cortex-M4 处理器处于线程模式（Thread mode），
+  *            优先级为特权级（Privileged），并使用主栈（Main Stack）。
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
+  * 版权所有 (c) 2017 STMicroelectronics.
+  * 保留所有权利。
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * 本软件受许可证条款约束，相关条款可在本软件组件根目录的 LICENSE 文件中查看。
+  * 若未附带 LICENSE 文件，则本软件按“现状”提供（AS-IS）。
   *
   ******************************************************************************
   */
@@ -32,38 +30,36 @@
 .global  g_pfnVectors
 .global  Default_Handler
 
-/* start address for the initialization values of the .data section. 
-defined in linker script */
+/* .data 段初始化值在 Flash 中的起始地址。
+由链接脚本定义 */
 .word  _sidata
-/* start address for the .data section. defined in linker script */  
+/* .data 段在 RAM 中的起始地址。由链接脚本定义 */  
 .word  _sdata
-/* end address for the .data section. defined in linker script */
+/* .data 段在 RAM 中的结束地址。由链接脚本定义 */
 .word  _edata
-/* start address for the .bss section. defined in linker script */
+/* .bss 段在 RAM 中的起始地址。由链接脚本定义 */
 .word  _sbss
-/* end address for the .bss section. defined in linker script */
+/* .bss 段在 RAM 中的结束地址。由链接脚本定义 */
 .word  _ebss
-/* stack used for SystemInit_ExtMemCtl; always internal RAM used */
+/* SystemInit_ExtMemCtl 使用的栈；始终使用内部 RAM */
 
 /**
- * @brief  This is the code that gets called when the processor first
- *          starts execution following a reset event. Only the absolutely
- *          necessary set is performed, after which the application
- *          supplied main() routine is called. 
- * @param  None
- * @retval : None
+ * @brief  处理器在复位后最先执行的代码。
+ *         此处仅完成最必要的初始化，然后调用应用程序提供的 main()。
+ * @param  无
+ * @retval 无
 */
 
     .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:  
-  ldr   sp, =_estack    		 /* set stack pointer */
+  ldr   sp, =_estack    		 /* 设置栈指针 */
 
-/* Call the clock system initialization function.*/
+/* 调用系统时钟初始化函数。*/
   bl  SystemInit  
 
-/* Copy the data segment initializers from flash to SRAM */  
+/* 将 .data 段初始值从 Flash 拷贝到 SRAM */  
   ldr r0, =_sdata
   ldr r1, =_edata
   ldr r2, =_sidata
@@ -80,7 +76,7 @@ LoopCopyDataInit:
   cmp r4, r1
   bcc CopyDataInit
   
-/* Zero fill the bss segment. */
+/* 将 .bss 段清零。 */
   ldr r2, =_sbss
   ldr r4, =_ebss
   movs r3, #0
@@ -94,19 +90,18 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
  
-/* Call static constructors */
+/* 调用静态构造函数 */
     bl __libc_init_array
-/* Call the application's entry point.*/
+/* 调用应用程序入口点。*/
   bl  main
   bx  lr    
 .size  Reset_Handler, .-Reset_Handler
 
 /**
- * @brief  This is the code that gets called when the processor receives an 
- *         unexpected interrupt.  This simply enters an infinite loop, preserving
- *         the system state for examination by a debugger.
- * @param  None     
- * @retval None       
+ * @brief  处理器收到未预期中断时执行的代码。
+ *         该处理函数仅进入死循环，以便调试器检查系统状态。
+ * @param  无
+ * @retval 无
 */
     .section  .text.Default_Handler,"ax",%progbits
 Default_Handler:
@@ -115,9 +110,9 @@ Infinite_Loop:
   .size  Default_Handler, .-Default_Handler
 /******************************************************************************
 *
-* The minimal vector table for a Cortex M3. Note that the proper constructs
-* must be placed on this to ensure that it ends up at physical address
-* 0x0000.0000.
+* Cortex-M3 的最小向量表模板。
+* 注意：必须使用正确的段与构造方式，
+* 才能确保其最终位于物理地址 0x0000.0000。
 * 
 *******************************************************************************/
    .section  .isr_vector,"a",%progbits
@@ -141,101 +136,100 @@ g_pfnVectors:
   .word  PendSV_Handler
   .word  SysTick_Handler
   
-  /* External Interrupts */
-  .word     WWDG_IRQHandler                   /* Window WatchDog              */                                        
-  .word     PVD_IRQHandler                    /* PVD through EXTI Line detection */                        
-  .word     TAMP_STAMP_IRQHandler             /* Tamper and TimeStamps through the EXTI line */            
-  .word     RTC_WKUP_IRQHandler               /* RTC Wakeup through the EXTI line */                      
-  .word     FLASH_IRQHandler                  /* FLASH                        */                                          
-  .word     RCC_IRQHandler                    /* RCC                          */                                            
-  .word     EXTI0_IRQHandler                  /* EXTI Line0                   */                        
-  .word     EXTI1_IRQHandler                  /* EXTI Line1                   */                          
-  .word     EXTI2_IRQHandler                  /* EXTI Line2                   */                          
-  .word     EXTI3_IRQHandler                  /* EXTI Line3                   */                          
-  .word     EXTI4_IRQHandler                  /* EXTI Line4                   */                          
-  .word     DMA1_Stream0_IRQHandler           /* DMA1 Stream 0                */                  
-  .word     DMA1_Stream1_IRQHandler           /* DMA1 Stream 1                */                   
-  .word     DMA1_Stream2_IRQHandler           /* DMA1 Stream 2                */                   
-  .word     DMA1_Stream3_IRQHandler           /* DMA1 Stream 3                */                   
-  .word     DMA1_Stream4_IRQHandler           /* DMA1 Stream 4                */                   
-  .word     DMA1_Stream5_IRQHandler           /* DMA1 Stream 5                */                   
-  .word     DMA1_Stream6_IRQHandler           /* DMA1 Stream 6                */                   
-  .word     ADC_IRQHandler                    /* ADC1, ADC2 and ADC3s         */                   
-  .word     0               				  /* Reserved                      */                         
-  .word     0              					  /* Reserved                     */                          
-  .word     0                                 /* Reserved                     */                          
-  .word     0                                 /* Reserved                     */                          
-  .word     EXTI9_5_IRQHandler                /* External Line[9:5]s          */                          
-  .word     TIM1_BRK_TIM9_IRQHandler          /* TIM1 Break and TIM9          */         
-  .word     TIM1_UP_TIM10_IRQHandler          /* TIM1 Update and TIM10        */         
-  .word     TIM1_TRG_COM_TIM11_IRQHandler     /* TIM1 Trigger and Commutation and TIM11 */
-  .word     TIM1_CC_IRQHandler                /* TIM1 Capture Compare         */                          
-  .word     TIM2_IRQHandler                   /* TIM2                         */                   
-  .word     TIM3_IRQHandler                   /* TIM3                         */                   
-  .word     TIM4_IRQHandler                   /* TIM4                         */                   
-  .word     I2C1_EV_IRQHandler                /* I2C1 Event                   */                          
-  .word     I2C1_ER_IRQHandler                /* I2C1 Error                   */                          
-  .word     I2C2_EV_IRQHandler                /* I2C2 Event                   */                          
-  .word     I2C2_ER_IRQHandler                /* I2C2 Error                   */                            
-  .word     SPI1_IRQHandler                   /* SPI1                         */                   
-  .word     SPI2_IRQHandler                   /* SPI2                         */                   
-  .word     USART1_IRQHandler                 /* USART1                       */                   
-  .word     USART2_IRQHandler                 /* USART2                       */                   
-  .word     0               				  /* Reserved                       */                   
-  .word     EXTI15_10_IRQHandler              /* External Line[15:10]s        */                          
-  .word     RTC_Alarm_IRQHandler              /* RTC Alarm (A and B) through EXTI Line */                 
-  .word     OTG_FS_WKUP_IRQHandler            /* USB OTG FS Wakeup through EXTI line */                       
-  .word     0                                 /* Reserved     				  */         
-  .word     0                                 /* Reserved       			  */         
-  .word     0                                 /* Reserved 					  */
-  .word     0                                 /* Reserved                     */                          
-  .word     DMA1_Stream7_IRQHandler           /* DMA1 Stream7                 */                          
-  .word     0                                 /* Reserved                     */                   
-  .word     SDIO_IRQHandler                   /* SDIO                         */                   
-  .word     TIM5_IRQHandler                   /* TIM5                         */                   
-  .word     SPI3_IRQHandler                   /* SPI3                         */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */
-  .word     DMA2_Stream0_IRQHandler           /* DMA2 Stream 0                */                   
-  .word     DMA2_Stream1_IRQHandler           /* DMA2 Stream 1                */                   
-  .word     DMA2_Stream2_IRQHandler           /* DMA2 Stream 2                */                   
-  .word     DMA2_Stream3_IRQHandler           /* DMA2 Stream 3                */                   
-  .word     DMA2_Stream4_IRQHandler           /* DMA2 Stream 4                */                   
-  .word     0                    			  /* Reserved                     */                   
-  .word     0              					  /* Reserved                     */                     
-  .word     0              					  /* Reserved                     */                          
-  .word     0             					  /* Reserved                     */                          
-  .word     0              					  /* Reserved                     */                          
-  .word     0              					  /* Reserved                     */                          
-  .word     OTG_FS_IRQHandler                 /* USB OTG FS                   */                   
-  .word     DMA2_Stream5_IRQHandler           /* DMA2 Stream 5                */                   
-  .word     DMA2_Stream6_IRQHandler           /* DMA2 Stream 6                */                   
-  .word     DMA2_Stream7_IRQHandler           /* DMA2 Stream 7                */                   
-  .word     USART6_IRQHandler                 /* USART6                       */                    
-  .word     I2C3_EV_IRQHandler                /* I2C3 event                   */                          
-  .word     I2C3_ER_IRQHandler                /* I2C3 error                   */                          
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                         
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */
-  .word     FPU_IRQHandler                    /* FPU                          */
-  .word     0                                 /* Reserved                     */                   
-  .word     0                                 /* Reserved                     */
-  .word     SPI4_IRQHandler                   /* SPI4                         */     
+  /* 外部中断 */
+  .word     WWDG_IRQHandler                   /* 窗口看门狗 */                                        
+  .word     PVD_IRQHandler                    /* 通过 EXTI 线触发的 PVD 检测 */                        
+  .word     TAMP_STAMP_IRQHandler             /* 通过 EXTI 线触发的防篡改与时间戳 */            
+  .word     RTC_WKUP_IRQHandler               /* 通过 EXTI 线触发的 RTC 唤醒 */                      
+  .word     FLASH_IRQHandler                  /* FLASH */                                          
+  .word     RCC_IRQHandler                    /* RCC */                                            
+  .word     EXTI0_IRQHandler                  /* EXTI 线 0 */                        
+  .word     EXTI1_IRQHandler                  /* EXTI 线 1 */                          
+  .word     EXTI2_IRQHandler                  /* EXTI 线 2 */                          
+  .word     EXTI3_IRQHandler                  /* EXTI 线 3 */                          
+  .word     EXTI4_IRQHandler                  /* EXTI 线 4 */                          
+  .word     DMA1_Stream0_IRQHandler           /* DMA1 流 0 */                  
+  .word     DMA1_Stream1_IRQHandler           /* DMA1 流 1 */                   
+  .word     DMA1_Stream2_IRQHandler           /* DMA1 流 2 */                   
+  .word     DMA1_Stream3_IRQHandler           /* DMA1 流 3 */                   
+  .word     DMA1_Stream4_IRQHandler           /* DMA1 流 4 */                   
+  .word     DMA1_Stream5_IRQHandler           /* DMA1 流 5 */                   
+  .word     DMA1_Stream6_IRQHandler           /* DMA1 流 6 */                   
+  .word     ADC_IRQHandler                    /* ADC1、ADC2、ADC3 */                   
+  .word     0               				  /* 保留 */                         
+  .word     0              					  /* 保留 */                          
+  .word     0                                 /* 保留 */                          
+  .word     0                                 /* 保留 */                          
+  .word     EXTI9_5_IRQHandler                /* 外部线 [9:5] */                          
+  .word     TIM1_BRK_TIM9_IRQHandler          /* TIM1 Break 与 TIM9 */         
+  .word     TIM1_UP_TIM10_IRQHandler          /* TIM1 Update 与 TIM10 */         
+  .word     TIM1_TRG_COM_TIM11_IRQHandler     /* TIM1 Trigger/Commutation 与 TIM11 */
+  .word     TIM1_CC_IRQHandler                /* TIM1 捕获比较 */                          
+  .word     TIM2_IRQHandler                   /* TIM2 */                   
+  .word     TIM3_IRQHandler                   /* TIM3 */                   
+  .word     TIM4_IRQHandler                   /* TIM4 */                   
+  .word     I2C1_EV_IRQHandler                /* I2C1 事件 */                          
+  .word     I2C1_ER_IRQHandler                /* I2C1 错误 */                          
+  .word     I2C2_EV_IRQHandler                /* I2C2 事件 */                          
+  .word     I2C2_ER_IRQHandler                /* I2C2 错误 */                            
+  .word     SPI1_IRQHandler                   /* SPI1 */                   
+  .word     SPI2_IRQHandler                   /* SPI2 */                   
+  .word     USART1_IRQHandler                 /* USART1 */                   
+  .word     USART2_IRQHandler                 /* USART2 */                   
+  .word     0               				  /* 保留 */                   
+  .word     EXTI15_10_IRQHandler              /* 外部线 [15:10] */                          
+  .word     RTC_Alarm_IRQHandler              /* 通过 EXTI 线触发的 RTC 闹钟 A/B */                 
+  .word     OTG_FS_WKUP_IRQHandler            /* 通过 EXTI 线触发的 USB OTG FS 唤醒 */                       
+  .word     0                                 /* 保留 */         
+  .word     0                                 /* 保留 */         
+  .word     0                                 /* 保留 */
+  .word     0                                 /* 保留 */                          
+  .word     DMA1_Stream7_IRQHandler           /* DMA1 流 7 */                          
+  .word     0                                 /* 保留 */                   
+  .word     SDIO_IRQHandler                   /* SDIO */                   
+  .word     TIM5_IRQHandler                   /* TIM5 */                   
+  .word     SPI3_IRQHandler                   /* SPI3 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */
+  .word     DMA2_Stream0_IRQHandler           /* DMA2 流 0 */                   
+  .word     DMA2_Stream1_IRQHandler           /* DMA2 流 1 */                   
+  .word     DMA2_Stream2_IRQHandler           /* DMA2 流 2 */                   
+  .word     DMA2_Stream3_IRQHandler           /* DMA2 流 3 */                   
+  .word     DMA2_Stream4_IRQHandler           /* DMA2 流 4 */                   
+  .word     0                    			  /* 保留 */                   
+  .word     0              					  /* 保留 */                     
+  .word     0              					  /* 保留 */                          
+  .word     0             					  /* 保留 */                          
+  .word     0              					  /* 保留 */                          
+  .word     0              					  /* 保留 */                          
+  .word     OTG_FS_IRQHandler                 /* USB OTG FS */                   
+  .word     DMA2_Stream5_IRQHandler           /* DMA2 流 5 */                   
+  .word     DMA2_Stream6_IRQHandler           /* DMA2 流 6 */                   
+  .word     DMA2_Stream7_IRQHandler           /* DMA2 流 7 */                   
+  .word     USART6_IRQHandler                 /* USART6 */                    
+  .word     I2C3_EV_IRQHandler                /* I2C3 事件 */                          
+  .word     I2C3_ER_IRQHandler                /* I2C3 错误 */                          
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                         
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */
+  .word     FPU_IRQHandler                    /* FPU */
+  .word     0                                 /* 保留 */                   
+  .word     0                                 /* 保留 */
+  .word     SPI4_IRQHandler                   /* SPI4 */     
                     
 
   .size  g_pfnVectors, .-g_pfnVectors
 
 /*******************************************************************************
 *
-* Provide weak aliases for each Exception handler to the Default_Handler. 
-* As they are weak aliases, any function with the same name will override 
-* this definition.
+* 为每个异常处理函数提供到 Default_Handler 的弱别名。
+* 由于是弱别名，用户若实现同名函数，将自动覆盖此处定义。
 * 
 *******************************************************************************/
    .weak      NMI_Handler

@@ -1,164 +1,164 @@
 /**
   ******************************************************************************
   * @file    main.c
-  * @brief   Application main program for STM32F401
-  * @details This application demonstrates a simple LED blink at a slower rate
-  *          than the bootloader to visually indicate that the application is running.
+  * @brief   STM32F401 应用程序主函数
+  * @details 本应用通过让 LED 以比 Bootloader 更慢的频率闪烁，
+  *          来直观指示应用程序正在运行。
   ******************************************************************************
   */
 
 #include "main.h"
 
-/* Private variables */
+/* 私有变量 */
 static volatile uint32_t tick_counter = 0;
 
 /**
-  * @brief  Main program
-  * @retval None
+  * @brief  主程序
+  * @retval 无
   */
 void main(void)
 {
-  /* Relocate vector table to application region (important!) */
-  /* Bootloader sets VTOR to 0x08000000, Application needs 0x08010000 */
+  /* 将向量表重定位到应用区（重要！） */
+  /* Bootloader 将 VTOR 设为 0x08000000，应用程序需要 0x08010000 */
   __disable_irq();
-  SCB->VTOR = 0x08010000;  /* Application vector table offset */
+  SCB->VTOR = 0x08010000;  /* 应用程序向量表偏移地址 */
   __enable_irq();
   
-  /* Initialize system clocks and peripherals */
+  /* 初始化系统时钟与外设 */
   system_init();
   
-  /* Initialize GPIO for LED status indication */
+  /* 初始化用于 LED 状态指示的 GPIO */
   gpio_init();
   
-  /* Initialize UART (optional, for debugging output) */
+  /* 初始化 UART（可选，用于调试输出） */
   // uart_init();
   
-  /* Application main loop */
+  /* 应用主循环 */
   while (1) {
-    /* Toggle LED at slower rate than bootloader */
+    /* 以低于 Bootloader 的频率翻转 LED */
     led_toggle();
     delay_ms(LED_BLINK_DELAY_MS);
   }
 }
 
 /**
-  * @brief  Initialize system clocks
-  * @details Configures system clock to 84MHz using PLL from HSI
-  * @retval None
+  * @brief  初始化系统时钟
+  * @details 使用 HSI 作为 PLL 输入，将系统时钟配置为 84MHz
+  * @retval 无
   */
 void system_init(void)
 {
-  /* Enable HSI */
+  /* 使能 HSI */
   RCC->CR |= RCC_CR_HSION;
-  while (!(RCC->CR & RCC_CR_HSIRDY));  /* Wait for HSI ready */
+  while (!(RCC->CR & RCC_CR_HSIRDY));  /* 等待 HSI 就绪 */
   
-  /* Configure PLL for 84MHz system clock */
-  /* PLL source = HSI (16MHz) */
+  /* 将 PLL 配置为 84MHz 系统时钟 */
+  /* PLL 输入源 = HSI (16MHz) */
   /* PLLM = 16, PLLN = 336, PLLP = 4 => 16MHz * 336 / 16 / 4 = 84MHz */
-  RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLSRC;  /* Clear PLL source */
-  /* Note: Keeping default HSI for simplicity in this example */
+  RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLSRC;  /* 清除 PLL 输入源配置 */
+  /* 说明：为简化示例，此处保持默认 HSI 配置 */
   
-  /* Update SystemCoreClock variable */
+  /* 更新 SystemCoreClock 变量 */
   SystemCoreClockUpdate();
   
-  /* Vector table is already set to APP_START_ADDR by SystemInit() in startup code */
+  /* 启动代码中的 SystemInit() 已将向量表设置为 APP_START_ADDR */
 }
 
 /**
-  * @brief  Initialize GPIO for LED (PA5)
-  * @retval None
+  * @brief  初始化 LED(GPIO PA5)
+  * @retval 无
   */
 void gpio_init(void)
 {
-  /* Enable GPIOA clock */
+  /* 使能 GPIOA 时钟 */
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   
-  /* Configure PA5 as output */
-  GPIOA->MODER &= ~(3 << (5 * 2));        /* Clear mode bits for PA5 */
-  GPIOA->MODER |= (1 << (5 * 2));         /* Set PA5 to output mode */
+  /* 将 PA5 配置为输出模式 */
+  GPIOA->MODER &= ~(3 << (5 * 2));        /* 清除 PA5 模式位 */
+  GPIOA->MODER |= (1 << (5 * 2));         /* 设置 PA5 为输出模式 */
   
-  /* Configure PA5 output type (push-pull) */
-  GPIOA->OTYPER &= ~(1 << 5);             /* Output push-pull */
+  /* 配置 PA5 输出类型（推挽） */
+  GPIOA->OTYPER &= ~(1 << 5);             /* 推挽输出 */
   
-  /* Configure PA5 speed (high speed) */
-  GPIOA->OSPEEDR &= ~(3 << (5 * 2));      /* Clear speed bits */
-  GPIOA->OSPEEDR |= (2 << (5 * 2));       /* High speed */
+  /* 配置 PA5 速度（高速） */
+  GPIOA->OSPEEDR &= ~(3 << (5 * 2));      /* 清除速度位 */
+  GPIOA->OSPEEDR |= (2 << (5 * 2));       /* 高速 */
   
-  /* Configure PA5 no pull-up/pull-down */
-  GPIOA->PUPDR &= ~(3 << (5 * 2));        /* No pull-up/pull-down */
+  /* 配置 PA5 无上拉/下拉 */
+  GPIOA->PUPDR &= ~(3 << (5 * 2));        /* 无上拉/下拉 */
   
-  /* Turn LED off initially */
-  GPIOA->BSRR = (1 << (5 + 16));          /* Reset PA5 */
+  /* 初始关闭 LED */
+  GPIOA->BSRR = (1 << (5 + 16));          /* 复位 PA5 */
 }
 
 /**
-  * @brief  Initialize UART2 for debugging (PA2: TX, PA3: RX)
-  * @details Configures UART2 at 115200 baud, 8N1
-  * @retval None
+  * @brief  初始化 UART2 用于调试（PA2: TX, PA3: RX）
+  * @details 将 UART2 配置为 115200 波特率，8N1
+  * @retval 无
   */
 void uart_init(void)
 {
-  /* Enable GPIOA clock for UART pins */
+  /* 为 UART 引脚使能 GPIOA 时钟 */
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   
-  /* Enable USART2 clock */
+  /* 使能 USART2 时钟 */
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
   
-  /* Configure PA2 (TX) and PA3 (RX) for UART */
-  /* Set alternate function AF7 for USART2 */
-  GPIOA->AFR[0] &= ~(0xF << (2 * 4));     /* Clear AF2 (PA2) */
-  GPIOA->AFR[0] |= (7 << (2 * 4));        /* Set AF7 for PA2 */
-  GPIOA->AFR[0] &= ~(0xF << (3 * 4));     /* Clear AF3 (PA3) */
-  GPIOA->AFR[0] |= (7 << (3 * 4));        /* Set AF7 for PA3 */
+  /* 将 PA2 (TX) 与 PA3 (RX) 配置为 UART 功能 */
+  /* 为 USART2 设置复用功能 AF7 */
+  GPIOA->AFR[0] &= ~(0xF << (2 * 4));     /* 清除 AF2 (PA2) */
+  GPIOA->AFR[0] |= (7 << (2 * 4));        /* PA2 设置为 AF7 */
+  GPIOA->AFR[0] &= ~(0xF << (3 * 4));     /* 清除 AF3 (PA3) */
+  GPIOA->AFR[0] |= (7 << (3 * 4));        /* PA3 设置为 AF7 */
   
-  /* Set PA2 and PA3 to alternate function mode */
-  GPIOA->MODER &= ~(3 << (2 * 2));        /* Clear PA2 mode */
-  GPIOA->MODER |= (2 << (2 * 2));         /* Set PA2 to AF mode */
-  GPIOA->MODER &= ~(3 << (3 * 2));        /* Clear PA3 mode */
-  GPIOA->MODER |= (2 << (3 * 2));         /* Set PA3 to AF mode */
+  /* 将 PA2 和 PA3 设置为复用功能模式 */
+  GPIOA->MODER &= ~(3 << (2 * 2));        /* 清除 PA2 模式 */
+  GPIOA->MODER |= (2 << (2 * 2));         /* PA2 设为复用模式 */
+  GPIOA->MODER &= ~(3 << (3 * 2));        /* 清除 PA3 模式 */
+  GPIOA->MODER |= (2 << (3 * 2));         /* PA3 设为复用模式 */
   
-  /* Configure UART2 */
-  /* Disable USART2 before configuration */
+  /* 配置 UART2 */
+  /* 配置前先关闭 USART2 */
   USART2->CR1 &= ~USART_CR1_UE;
   
-  /* Set baud rate to 115200 (assuming APB1 clock = 16MHz HSI/4 = 16MHz) */
+  /* 设置波特率为 115200（假设 APB1 时钟 = 16MHz） */
   /* USART_BRR = f_clk / baud = 16MHz / 115200 ≈ 139 */
   USART2->BRR = 139;
   
-  /* Configure 8N1: 8 data bits, no parity, 1 stop bit */
-  /* Default: M=0 (8 data bits), PCE=0 (no parity), STOP=00 (1 stop bit) */
+  /* 配置 8N1：8 位数据位，无校验，1 位停止位 */
+  /* 默认值：M=0 (8位数据), PCE=0 (无校验), STOP=00 (1位停止位) */
   
-  /* Enable transmitter and receiver */
+  /* 使能发送器和接收器 */
   USART2->CR1 |= USART_CR1_TE;
   USART2->CR1 |= USART_CR1_RE;
   
-  /* Enable USART2 */
+  /* 使能 USART2 */
   USART2->CR1 |= USART_CR1_UE;
 }
 
 /**
-  * @brief  Toggle LED state
-  * @retval None
+  * @brief  翻转 LED 状态
+  * @retval 无
   */
 void led_toggle(void)
 {
-  /* Toggle PA5 */
+  /* 翻转 PA5 */
   if (GPIOA->ODR & (1 << 5)) {
-    GPIOA->BSRR = (1 << (5 + 16));        /* Reset PA5 */
+    GPIOA->BSRR = (1 << (5 + 16));        /* 复位 PA5 */
   } else {
-    GPIOA->BSRR = (1 << 5);               /* Set PA5 */
+    GPIOA->BSRR = (1 << 5);               /* 置位 PA5 */
   }
 }
 
 /**
-  * @brief  Simple delay function
-  * @param  ms: delay time in milliseconds
-  * @retval None
+  * @brief  简单延时函数
+  * @param  ms: 延时时间（毫秒）
+  * @retval 无
   */
 void delay_ms(uint32_t ms)
 {
-  /* Simple busy-wait delay */
-  /* For 16MHz HSI: approximately 16000 cycles per millisecond */
+  /* 简单忙等待延时 */
+  /* 在 16MHz HSI 下：每毫秒约 16000 个周期 */
   volatile uint32_t count;
   volatile uint32_t i;
   
@@ -170,23 +170,23 @@ void delay_ms(uint32_t ms)
 }
 
 /**
-  * @brief  Send character via UART2
-  * @param  ch: character to send
-  * @retval None
+  * @brief  通过 UART2 发送单个字符
+  * @param  ch: 待发送字符
+  * @retval 无
   */
 void uart_send_char(uint8_t ch)
 {
-  /* Wait until TXE flag is set */
+  /* 等待 TXE 标志置位 */
   while (!(USART2->SR & USART_SR_TXE));
   
-  /* Send character */
+  /* 发送字符 */
   USART2->DR = ch;
 }
 
 /**
-  * @brief  Send string via UART2
-  * @param  str: string to send
-  * @retval None
+  * @brief  通过 UART2 发送字符串
+  * @param  str: 待发送字符串
+  * @retval 无
   */
 void uart_send_string(const char *str)
 {
